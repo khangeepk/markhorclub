@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     for (const faq of dbFaqs) {
       const qLower = faq.question.toLowerCase()
-      const keywords = qLower.split(' ').filter((w) => w.length > 3)
+      const keywords = qLower.split(' ').filter((w: string) => w.length > 3)
 
       if (qLower.includes(cleanInput) || cleanInput.includes(qLower)) {
         bestMatchAnswer = faq.answer
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       }
 
       // Count matching keywords
-      const matchCount = keywords.filter((kw) => cleanInput.includes(kw)).length
+      const matchCount = keywords.filter((kw: string) => cleanInput.includes(kw)).length
       if (matchCount >= 2 || (keywords.length <= 2 && matchCount >= 1)) {
         bestMatchAnswer = faq.answer
         break

@@ -16,14 +16,14 @@ export async function GET() {
     })
 
     const totalMembers = members.length
-    const activeMembers = members.filter((m) => m.membershipStatus === 'active').length
+    const activeMembers = members.filter((m: any) => m.membershipStatus === 'active').length
 
     let totalContractValue = 0
     let totalFeesReceived = 0
 
-    const formattedMembers = members.map((m) => {
+    const formattedMembers = members.map((m: any) => {
       totalContractValue += m.membershipFeeSnapshot
-      const paid = m.payments.reduce((sum, p) => sum + (p.isReversed ? 0 : p.amount), 0)
+      const paid = m.payments.reduce((sum: number, p: any) => sum + (p.isReversed ? 0 : p.amount), 0)
       totalFeesReceived += paid
       const balance = Math.max(0, m.membershipFeeSnapshot - paid)
 
@@ -63,7 +63,7 @@ export async function GET() {
       orderBy: { date: 'desc' },
     })
 
-    const otherIncomeTotal = incomeEntries.reduce((sum, i) => sum + i.amount, 0)
+    const otherIncomeTotal = incomeEntries.reduce((sum: number, i: any) => sum + i.amount, 0)
     const totalIncome = totalFeesReceived + otherIncomeTotal
 
     // 5. Expenses
@@ -71,7 +71,7 @@ export async function GET() {
       orderBy: { date: 'desc' },
     })
 
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0)
+    const totalExpenses = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
     const netResult = totalIncome - totalExpenses
 
     // 6. FAQs
