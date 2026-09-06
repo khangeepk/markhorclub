@@ -20,11 +20,9 @@ export default function LoginPage() {
       return
     }
     setLoading(true)
-    // Simulate authentication delay
     await new Promise((r) => setTimeout(r, 600))
 
     try {
-      // In a real app, call an API route here. For now just redirect.
       router.push("/")
     } catch {
       setError("Login failed. Please try again.")

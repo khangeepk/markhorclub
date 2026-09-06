@@ -1,12 +1,5 @@
 import './globals.css'
 import React from 'react'
-import Header from '../components/layout/Header'
-import Footer from '../components/layout/Footer'
-import SmoothScrollProvider from '../components/common/SmoothScrollProvider'
-import CinematicIntroProvider from '../components/common/CinematicIntro'
-import { WhatsAppButton } from '../components/common/WhatsAppButton'
-import { FaqChatbot } from '../components/common/FaqChatbot'
-import { BackgroundAmbientAudio } from '../components/common/BackgroundAmbientAudio'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -55,17 +48,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen flex flex-col bg-[#071116] text-[#F4F0E8] antialiased selection:bg-[#C7A15A] selection:text-[#071116]">
-        <CinematicIntroProvider>
-          <BackgroundAmbientAudio />
-          <SmoothScrollProvider>
-            <Header />
-            <main className="flex-1 w-full">{children}</main>
-            <Footer />
-            <WhatsAppButton />
-            <FaqChatbot />
-          </SmoothScrollProvider>
-        </CinematicIntroProvider>
+        {children}
       </body>
     </html>
   )
 }
+

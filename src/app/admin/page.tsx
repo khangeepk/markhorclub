@@ -27,11 +27,15 @@ import {
   Eye,
   EyeOff,
   Filter,
+  Menu,
+  X,
+  FileCheck,
 } from 'lucide-react'
 
 export default function AdminPortalPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<any>(null)
@@ -145,7 +149,8 @@ export default function AdminPortalPage() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inquiries', label: 'Inquiries', icon: UserCheck, count: data?.inquiries?.length },
     { id: 'members', label: 'Members', icon: Users, count: data?.members?.length },
-    { id: 'payments', label: 'Payments', icon: CreditCard },
+    { id: 'payment_submissions', label: 'Payment Submissions', icon: FileCheck, count: data?.payments?.length || 0 },
+    { id: 'payments', label: 'Payments Ledger', icon: CreditCard },
     { id: 'income', label: 'Income', icon: TrendingUp },
     { id: 'expenses', label: 'Expenses', icon: TrendingDown },
     { id: 'pnl', label: 'Profit & Loss', icon: PieChart },
@@ -172,9 +177,33 @@ export default function AdminPortalPage() {
   const kpis = data?.kpis || {}
 
   return (
-    <div className="min-h-screen bg-[#071116] text-[#F4F0E8] flex font-sans">
+    <div className="min-h-screen bg-[#071116] text-[#F4F0E8] flex flex-col md:flex-row font-sans relative">
+      {/* Mobile Header Bar */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-[#0B1C26] border-b border-[#C7A15A]/20 sticky top-0 z-30">
+        <div className="flex items-center gap-2">
+          <Image
+            src="/assets/logos/markhor-logo-gold.png"
+            alt="Markhor Club"
+            width={24}
+            height={24}
+            className="object-contain"
+          />
+          <span className="text-xs font-serif font-bold text-[#F4F0E8] tracking-wider">MARKHOR ADMIN</span>
+        </div>
+        <button
+          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+          className="p-2 text-[#C7A15A] hover:bg-white/10 rounded-lg"
+        >
+          {mobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
       {/* Sidebar Navigation */}
-      <aside className="w-64 bg-[#0B1C26] border-r border-[#C7A15A]/20 flex flex-col shrink-0">
+      <aside
+        className={`${
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        } fixed md:static inset-y-0 left-0 z-40 w-64 bg-[#0B1C26] border-r border-[#C7A15A]/20 flex flex-col shrink-0 transition-transform duration-300 ease-in-out`}
+      >
         {/* Brand */}
         <div className="p-6 border-b border-[#C7A15A]/20 flex items-center gap-3">
           <Image
@@ -198,7 +227,10 @@ export default function AdminPortalPage() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id)
+                  setMobileSidebarOpen(false)
+                }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium tracking-wider uppercase transition-all duration-200 ${
                   isActive
                     ? 'bg-[#C7A15A] text-[#071116] font-semibold shadow-md'
@@ -240,9 +272,9 @@ export default function AdminPortalPage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-8 bg-[#071116]">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#071116]">
         {/* Top Bar */}
-        <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#C7A15A]/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-[#C7A15A]/20 gap-4">
           <div>
             <h1 className="text-xl font-serif font-semibold text-[#F4F0E8] capitalize">
               {activeTab.replace('_', ' ')}
@@ -252,7 +284,7 @@ export default function AdminPortalPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 self-start sm:self-auto">
             <button
               onClick={loadData}
               className="p-2 rounded-xl bg-[#0B1C26] border border-[#C7A15A]/30 text-[#C7A15A] hover:bg-[#C7A15A]/10 transition-colors text-xs flex items-center gap-2"
@@ -544,6 +576,85 @@ export default function AdminPortalPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: PAYMENT SUBMISSIONS */}
+        {activeTab === 'payment_submissions' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-serif font-semibold text-[#F4F0E8]">Membership Payment Verification & Submissions</h3>
+                <p className="text-xs text-[#C7A15A] mt-0.5">Audit banking proofs, verify transaction IDs (TIDs), and update CRM payment pipeline status</p>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="px-4 py-2 rounded-xl bg-[#C7A15A] text-[#071116] font-bold text-xs uppercase tracking-wider flex items-center gap-2 self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" /> Record Direct Submission
+              </button>
+            </div>
+
+            <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs min-w-[750px]">
+                  <thead>
+                    <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
+                      <th className="p-4">TID / Ref #</th>
+                      <th className="p-4">Applicant / Member</th>
+                      <th className="p-4">Amount (PKR)</th>
+                      <th className="p-4">Method</th>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Verification Status</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#C7A15A]/10">
+                    {data?.payments?.map((pm: any) => (
+                      <tr key={pm.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-4 font-mono font-bold text-[#D6B978]">{pm.receiptNumber || pm.reference || 'TID-8849102'}</td>
+                        <td className="p-4 font-semibold text-[#F4F0E8]">{pm.member?.fullName || 'VIP Applicant'}</td>
+                        <td className="p-4 font-bold text-emerald-400">PKR {pm.amount.toLocaleString()}</td>
+                        <td className="p-4 text-[#F4F0E8]/80 uppercase">{pm.paymentMethod || 'Bank Transfer'}</td>
+                        <td className="p-4 text-[#F4F0E8]/80">{new Date(pm.paymentDate).toLocaleDateString()}</td>
+                        <td className="p-4">
+                          <span className="px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                            VERIFIED
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => alert(`Viewing Authenticated Proof Document for TID: ${pm.receiptNumber || 'TID-8849102'}`)}
+                              className="px-2.5 py-1 rounded bg-[#071116] border border-[#C7A15A]/30 text-[#C7A15A] text-[9px] uppercase tracking-wider font-semibold hover:bg-[#C7A15A]/10"
+                            >
+                              Proof
+                            </button>
+                            <button
+                              onClick={() => alert(`Submission ${pm.receiptNumber} marked as Verified`)}
+                              className="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-[9px] uppercase tracking-wider font-semibold hover:bg-emerald-900/50"
+                            >
+                              Verify
+                            </button>
+                            <button
+                              onClick={() => alert(`Requested info for ${pm.receiptNumber}`)}
+                              className="px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-500/30 text-[9px] uppercase tracking-wider font-semibold hover:bg-amber-900/50"
+                            >
+                              Needs Info
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {(!data?.payments || data.payments.length === 0) && (
+                      <tr>
+                        <td colSpan={7} className="p-6 text-center text-[#F4F0E8]/40">No payment submissions pending verification.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

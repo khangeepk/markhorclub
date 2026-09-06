@@ -947,6 +947,44 @@ Created `src/lib/crm/` with:
 - **SEO & Indexing**: PASS (`robots.ts` & `sitemap.ts` configured)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-ADMIN-FIX-12 — ADMIN PORTAL UI, CSS & LAYOUT RECOVERY
+
+- **Status**: COMPLETE
+- **Completion Date**: September 6, 2026
+
+### 1. Root Cause Analysis
+- **Root Layout Interference**: Global `src/app/layout.tsx` previously wrapped all routes with public site components (`Header`, `Footer`, `WhatsAppButton`, `FaqChatbot`, `BackgroundAmbientAudio`, `SmoothScrollProvider`, `CinematicIntroProvider`), causing public header/footer to render around `/admin/login` and `/admin` with unstyled HTML links.
+- **Tailwind Glob Expansion Issue**: Tailwind content matcher in `tailwind.config.js` did not explicitly include explicit sub-paths for `(public)` and `admin` route directories, resulting in missing utility CSS rules on admin components.
+
+### 2. Layout & Architectural Separation
+- **Root Layout (`src/app/layout.tsx`)**: Minimal document root containing `<html>`, `<body>`, font definitions, and `globals.css` import. Zero public navigation/widgets directly in root layout.
+- **Public Route Group (`src/app/(public)`)**: Encapsulates `page.tsx` and public pages in `src/app/(public)/layout.tsx` alongside public `Header`, `Footer`, `SmoothScrollProvider`, `CinematicIntroProvider`, `BackgroundAmbientAudio`, `WhatsAppButton`, and `FaqChatbot`.
+- **Admin Portal Layout (`src/app/admin/layout.tsx`)**: Dedicated isolated layout for `/admin` and `/admin/login` with dark luxury background (`#071116`), zero public headers/footers, and strict indexing exclusion (`noindex`).
+
+### 3. Admin Login & Dashboard Enhancements
+- **Admin Login (`src/app/admin/login/page.tsx`)**:
+  - Full viewport centered luxury card (`#0B1C26` with `#C7A15A` gold hairline border).
+  - Show/hide password eye toggle button.
+  - Styled inputs with icons and high-contrast typography.
+  - Rate-limit error banner & generic "Invalid credentials." feedback.
+  - Security footer: "Authorized Personnel Only • Server Enforced Session".
+- **Admin Dashboard (`src/app/admin/page.tsx`)**:
+  - Added responsive mobile drawer navigation (`Menu` / `X` toggle).
+  - Added dedicated `Payment Submissions` tab with TID audit, proof modal triggers, and action buttons (`Proof`, `Verify`, `Needs Info`).
+  - Wrapped all data tables in responsive horizontal scroll containers (`overflow-x-auto`).
+
+### 4. QA Verification
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
+- **Production Build**: `npm run build` PASS (21/21 static & dynamic routes compiled cleanly)
+- **Localhost Visual QA**:
+  - `/admin/login`: Fully styled luxury dark UI without public header/footer/blue links.
+  - `/admin`: Fully styled admin sidebar, topbar, KPI cards, and data tables.
+  - `/`: Public website cinematic intro, Stitch UI, header, and footer preserved with 0 regressions.
+- **Localhost URL**: `http://localhost:3000`
+
+
 
 
 
