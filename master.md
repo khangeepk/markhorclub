@@ -883,6 +883,38 @@ Created `src/lib/crm/` with:
 - **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled cleanly)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-AUDIO-09 — SOFT AMBIENT MUSIC IMPLEMENTED
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform`
+
+### AMBIENT AUDIO ARCHITECTURE & INTEGRATION
+1. **Audio Asset**: `/public/assets/audio/background/markhor-ambient.mp3` (7.72 MB verified). Mounted once in `RootLayout` with `preload="metadata"` and `loop`.
+2. **Global Component**: Created `src/components/common/BackgroundAmbientAudio.tsx`. Mounted inside `CinematicIntroProvider` in `src/app/layout.tsx`.
+3. **Admin Route Exclusion**: Immediately returns `null` on `/admin` and `/admin/*` routes (`pathname?.startsWith('/admin')`).
+4. **Subtle Volume Scale & Fade-In**:
+   - Default target volume: `0.07` (does not exceed 0.10).
+   - Smooth volume ramp from `0` to `0.07` over 2.5 seconds using `requestAnimationFrame`.
+5. **Autoplay Unlock Fallback**:
+   - Attaches one-time window interaction listeners (`click`, `touchstart`, `keydown`, `scroll`) to unlock audio and fade in smoothly if browser autoplay policy restricts unmuted startup.
+6. **Cinematic Intro Synchronization**: Consumes `useCinematicIntro()` to delay ambient music playback until `introComplete === true` (after intro completes or is skipped).
+7. **Voice Concierge & Media Ducking**:
+   - Listens to custom events `markhor:duck-ambient` (ducks volume from `0.07` to `0.01` when VocoGen or TTS speech begins) and `markhor:restore-ambient` (restores volume smoothly to `0.07` when speech ends).
+   - Integrated into `FaqChatbot.tsx` speech start/stop handlers.
+8. **Discreet Sound UI & Preference**:
+   - Floating luxury Sound Toggle control (`Volume2` / `VolumeX`) with volume tooltip and hover volume slider (range 0.00 to 0.12).
+   - Persists user mute preference in `localStorage.setItem('markhorAmbientSound', 'on' | 'off')`.
+9. **Tab Visibility**: Pauses playback when `document.visibilityState === 'hidden'`, resumes when visible if sound preference is `'on'`.
+
+### QA & BUILD VERIFICATION
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
+- **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled cleanly)
+- **Localhost URL**: `http://localhost:3000`
+
+
 
 
 

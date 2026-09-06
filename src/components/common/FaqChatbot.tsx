@@ -99,6 +99,11 @@ export const FaqChatbot: React.FC = () => {
     }
     setPlayingMsgId(null)
     setIsAudioPaused(false)
+
+    // Restore ambient background audio volume
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('markhor:restore-ambient'))
+    }
   }
 
   const handleSend = async (textToSend?: string) => {
@@ -161,9 +166,15 @@ export const FaqChatbot: React.FC = () => {
       if (isAudioPaused) {
         audioRef.current.play()
         setIsAudioPaused(false)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('markhor:duck-ambient'))
+        }
       } else {
         audioRef.current.pause()
         setIsAudioPaused(true)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('markhor:restore-ambient'))
+        }
       }
       return
     }
@@ -172,6 +183,11 @@ export const FaqChatbot: React.FC = () => {
     stopAudio()
     setPlayingMsgId(msg.id)
     setIsAudioPaused(false)
+
+    // Duck ambient background audio during voice playback
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('markhor:duck-ambient'))
+    }
 
     try {
       const res = await fetch('/api/voice/synthesize', {
