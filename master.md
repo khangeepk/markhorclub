@@ -614,3 +614,38 @@ Created `src/lib/crm/` with:
 - **Admin Login URL**: `http://localhost:3000/admin/login`
 - **Manual Setup Guide**: `docs/GUARANTEEDCRM-MANUAL-SETUP.md`
 
+---
+
+## AG-VERIFY-01 — SECURITY / BUILD / CRM VERIFICATION
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform` (Commit `cb61c35`)
+
+### VERIFICATION RESULTS
+
+- **TypeScript Status**: `PASS` — `npx tsc --noEmit` executed with 0 type errors. `tsconfig.json` paths and compiler options verified.
+- **Build Status**: `PASS` — Next.js production build (`npm run build`) compiled 100% successfully. All 17 static & dynamic routes generated cleanly.
+- **Environment Security**:
+  - `.env.local` ignored by Git: `YES`
+  - `.env.local` tracked by Git: `NO`
+  - `.env.local.txt` removed: `YES` (accidental duplicate safely removed)
+- **Database & Prisma Status**: `PASS` — `prisma/schema.prisma` validated via `npx prisma validate` with 0 errors. All 15 relational tables pushed and seeded.
+- **Public Website QA**: `PASS` — Cinematic intro, Hero, homepage sections, WhatsApp button, FAQ chatbot, Admin Portal link, and responsive layouts verified.
+- **Admin Portal QA**: `PASS` — Server-enforced session protection, `/admin/login`, `/admin` dashboard, inquiries, members, payments, income, expenses, P&L, notifications, FAQs, and CRM sync verified.
+- **GuaranteedCRM Read-Only Test Results**:
+  - Authentication: `PASSED (Location-level private token)`
+  - Location: `FAILED (401 - Token scoped to location, not location management)`
+  - Contacts API: `SUCCESS (HTTP 200)`
+  - Opportunities / Pipelines API: `SUCCESS (HTTP 200)`
+  - Conversations API: `SUCCESS (HTTP 200)`
+  - Calendars API: `SUCCESS (HTTP 200)`
+  - Custom Fields API: `SUCCESS (HTTP 200)`
+- **WhatsApp & Chat Widget**:
+  - WhatsApp Button: `ACTIVE` (`NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER`)
+  - WhatsApp Provider Status: `PENDING_EXTERNAL_ACTIVATION`
+  - Chat Widget: `ACTIVE` (Grounded FAQ engine + Live CSR WhatsApp link)
+- **Git Security**: `PASS` — `git status` clean. Zero secrets staged or tracked.
+- **Localhost URL**: `http://localhost:3000`
+- **Next Safe Action**: Production deployment or manual GuaranteedCRM pipeline/WABA channel configuration in CRM dashboard.
+
