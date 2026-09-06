@@ -756,6 +756,35 @@ Created `src/lib/crm/` with:
 - **E2E Integration Tests**: PASS (Membership Inquiry, Book a Visit, Chat FAQ & Offline Message verified)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-GCRM-AI-04 — CRM NATIVE CONVERSATION AI ARCHITECTURE
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform`
+
+### CONVERSATION AI & KNOWLEDGE BASE ARCHITECTURE
+1. **AI Agent Strategy**: Defined specification for **Markhor Club Concierge** — a digital membership and visitor concierge designed with a premium, professional, warm, concise, and hospitality-led tone.
+2. **Grounded Knowledge Base**: Created `src/lib/crm/knowledge-base.ts` containing 10 verified categories (About, Location, Membership, Amenities, Outdoor, Aqua Park, Book a Visit, Contact, Payments, Human Support) and standard FAQs.
+3. **Strict Anti-Hallucination Guardrails**: Programmed query engine to return `"I don't have verified information for that yet. I can connect you with a Markhor Club representative."` for unverified questions (discounts, room counts, slide counts, construction dates, investment returns, GPS).
+4. **CRM Webchat Embed & Dynamic Loader**: Added dynamic loader in `FaqChatbot.tsx` for GuaranteedCRM Webchat script (`NEXT_PUBLIC_GCRM_CHAT_WIDGET_SRC` & `NEXT_PUBLIC_GCRM_CHAT_WIDGET_ID`).
+5. **Resilient Local FAQ & Offline Fallback**: Retained grounded local FAQ Concierge as a resilient fallback. Integrated Live CSR handoff drawer with direct WhatsApp redirection (`wa.me/+923305230888`) and offline message logging (`action: leaveMessage`) saved locally and synced to CRM.
+6. **Lead Capture Engine**: Automatic lead capture (`action: leadCapture`) in POST `/api/chat` for membership applicants — creates local DB record and upserts CRM Contact + Opportunity in `01 New Inquiry` stage (`5e526237-65fa-4146-8ad7-27c881765c49`).
+7. **Floating UI Positioning**: Verified zero floating button overlap (`left-6` for AI Concierge, `right-6` for WhatsApp) on 1440px, 390px, and 320px viewports.
+8. **Admin Portal Status**: Enhanced Admin Portal integration status with badges for Conversation AI (Active), Knowledge Base (Prepared - 10 Categories), CRM Webchat (Manual Setup Req), Live CSR Handoff (Fallback Ready), and WhatsApp (Pending Activation).
+
+### UNRESOLVED MANUAL CRM ACTIONS (Documented in `docs/GUARANTEEDCRM-MANUAL-SETUP.md`)
+1. **Conversation AI Agent Bot Setup**: Menu Path: **AI Agents -> Conversation AI -> Create Bot**. Bot Name: `Markhor Club Concierge`. Add the 10 Knowledge Base categories.
+2. **CRM Webchat Widget Embed ID**: Menu Path: **Sites -> Chat Widget**. Obtain widget ID and add `NEXT_PUBLIC_GCRM_CHAT_WIDGET_ID` to `.env.local`.
+
+### QA & BUILD VERIFICATION
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
+- **Production Build**: `npm run build` PASS (18/18 static & dynamic routes compiled)
+- **AI QA & Intent Tests**: PASS (FAQ matching, Book a Visit intent, Live CSR intent, anti-hallucination guardrail, and Lead Capture verified)
+- **Localhost URL**: `http://localhost:3000`
+
+
 
 
 

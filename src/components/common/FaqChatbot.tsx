@@ -1,19 +1,27 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { MessageSquare, X, Send, Bot, User, PhoneCall, Sparkles } from 'lucide-react'
+import { MessageSquare, X, Send, Bot, User, PhoneCall, Sparkles, Calendar, CheckCircle2 } from 'lucide-react'
 
 interface Message {
   id: string
   sender: 'bot' | 'user'
   text: string
   time: string
+  intent?: string
 }
 
 export const FaqChatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showOfflineModal, setShowOfflineModal] = useState(false)
+
+  // Offline message form state
+  const [offlineForm, setOfflineForm] = useState({ fullName: '', phone: '', email: '', message: '' })
+  const [offlineSubmitting, setOfflineSubmitting] = useState(false)
+  const [offlineSuccess, setOfflineSuccess] = useState(false)
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -24,6 +32,24 @@ export const FaqChatbot: React.FC = () => {
   ])
 
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  const gcrmWidgetSrc = process.env.NEXT_PUBLIC_GCRM_CHAT_WIDGET_SRC
+  const gcrmWidgetId = process.env.NEXT_PUBLIC_GCRM_CHAT_WIDGET_ID
+
+  useEffect(() => {
+    // If GuaranteedCRM Chat Widget environment script is present, load it dynamically
+    if (gcrmWidgetSrc && gcrmWidgetId) {
+      const script = document.createElement('script')
+      script.src = gcrmWidgetSrc
+      script.async = true
+      script.setAttribute('data-widget-id', gcrmWidgetId)
+      document.body.appendChild(script)
+
+      return () => {
+        document.body.removeChild(script)
+      }
+    }
+  }, [gcrmWidgetSrc, gcrmWidgetId])
 
   useEffect(() => {
     if (isOpen) {
@@ -57,23 +83,62 @@ export const FaqChatbot: React.FC = () => {
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'bot',
-        text: data.reply || "I don't have verified information for that yet. Would you like to speak with a Markhor Club representative?",
+        text: data.reply || "I don't have verified information for that yet. I can connect you with a Markhor Club representative.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        intent: data.intent,
       }
 
       setMessages((prev) => [...prev, botMsg])
+
+      // If user requested Live CSR handoff, offer offline fallback modal if CSR is offline
+      if (data.intent === 'live_csr' || text.toLowerCase().includes('csr')) {
+        setShowOfflineModal(true)
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
           sender: 'bot',
-          text: 'Our AI Concierge is momentarily busy. Please reach us directly at UAN 0995-111-222-333.',
+          text: 'Our AI Concierge is momentarily busy. Please reach us directly at UAN 0995-111-222-333 or via WhatsApp.',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleOfflineSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!offlineForm.fullName || !offlineForm.phone || !offlineForm.message) return
+
+    setOfflineSubmitting(true)
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'leaveMessage',
+          fullName: offlineForm.fullName,
+          phone: offlineForm.phone,
+          email: offlineForm.email,
+          message: offlineForm.message,
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setOfflineSuccess(true)
+        setTimeout(() => {
+          setShowOfflineModal(false)
+          setOfflineSuccess(false)
+          setOfflineForm({ fullName: '', phone: '', email: '', message: '' })
+        }, 2000)
+      }
+    } catch {
+      alert('Failed to submit message. Please try WhatsApp.')
+    } finally {
+      setOfflineSubmitting(false)
     }
   }
 
@@ -92,10 +157,10 @@ export const FaqChatbot: React.FC = () => {
 
   return (
     <>
-      {/* Floating Chatbot Launcher Button (Bottom Left) */}
+      {/* Floating Chatbot Launcher Button (Bottom Left - NO OVERLAP WITH WHATSAPP ON BOTTOM RIGHT) */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Open Markhor FAQ Assistant"
+        aria-label="Open Markhor VIP Concierge Chat"
         className="fixed bottom-6 left-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#071116]/95 border border-[#C7A15A]/40 text-[#F4F0E8] shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-[#C7A15A] hover:shadow-[0_0_25px_rgba(199,161,90,0.3)] group"
       >
         <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#C7A15A]/15 text-[#C7A15A] group-hover:bg-[#C7A15A] group-hover:text-[#071116] transition-colors duration-300">
@@ -107,9 +172,9 @@ export const FaqChatbot: React.FC = () => {
         </div>
       </button>
 
-      {/* Chat Modal */}
+      {/* Main Luxury Concierge Modal */}
       {isOpen && (
-        <div className="fixed bottom-24 left-6 z-50 w-[92vw] sm:w-[380px] h-[520px] rounded-2xl bg-[#071116] border border-[#C7A15A]/40 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-24 left-6 z-50 w-[92vw] sm:w-[380px] h-[540px] rounded-2xl bg-[#071116] border border-[#C7A15A]/40 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 bg-[#0B1C26] border-b border-[#C7A15A]/20">
             <div className="flex items-center gap-3">
@@ -117,8 +182,8 @@ export const FaqChatbot: React.FC = () => {
                 <Sparkles className="w-4 h-4 animate-pulse" />
               </div>
               <div>
-                <h3 className="text-sm font-serif font-medium text-[#F4F0E8] tracking-wide">Markhor Concierge</h3>
-                <p className="text-[10px] tracking-wider text-[#C7A15A] uppercase">AI Powered • Verified Facts</p>
+                <h3 className="text-sm font-serif font-medium text-[#F4F0E8] tracking-wide">Markhor Club Concierge</h3>
+                <p className="text-[10px] tracking-wider text-[#C7A15A] uppercase">AI Powered • Verified Knowledge Base</p>
               </div>
             </div>
             <button
@@ -136,7 +201,7 @@ export const FaqChatbot: React.FC = () => {
                 key={act}
                 onClick={() => {
                   if (act === 'Speak to Live CSR') {
-                    window.open(liveCsrUrl, '_blank')
+                    setShowOfflineModal(true)
                   } else {
                     handleSend(act)
                   }
@@ -161,13 +226,25 @@ export const FaqChatbot: React.FC = () => {
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
+                  className={`max-w-[82%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
                     msg.sender === 'user'
                       ? 'bg-[#C7A15A] text-[#071116] font-medium rounded-br-none'
                       : 'bg-[#0B1C26] border border-[#C7A15A]/20 text-[#F4F0E8] rounded-bl-none'
                   }`}
                 >
                   <p>{msg.text}</p>
+
+                  {/* Contextual Action Trigger */}
+                  {msg.intent === 'book_visit' && (
+                    <a
+                      href="#membership"
+                      onClick={() => setIsOpen(false)}
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#C7A15A] text-[#071116] font-bold text-[10px] uppercase tracking-wider hover:bg-[#D6B978]"
+                    >
+                      <Calendar className="w-3 h-3" /> Book Site Visit Now
+                    </a>
+                  )}
+
                   <span
                     className={`block text-[9px] mt-1 text-right ${
                       msg.sender === 'user' ? 'text-[#071116]/70' : 'text-[#F4F0E8]/40'
@@ -192,17 +269,15 @@ export const FaqChatbot: React.FC = () => {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Direct CSR Connect Banner */}
-          <div className="px-4 py-1.5 bg-[#0B1C26]/90 border-t border-[#C7A15A]/20 flex items-center justify-between text-[11px] text-[#F4F0E8]/80">
-            <span>Need human assistance?</span>
-            <a
-              href={liveCsrUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+          {/* CSR Connect / Fallback Banner */}
+          <div className="px-4 py-2 bg-[#0B1C26]/90 border-t border-[#C7A15A]/20 flex items-center justify-between text-[11px] text-[#F4F0E8]/80">
+            <span>Speak to a human representative?</span>
+            <button
+              onClick={() => setShowOfflineModal(true)}
               className="flex items-center gap-1 text-[#C7A15A] hover:underline font-medium"
             >
               <PhoneCall className="w-3 h-3" /> Connect to CSR
-            </a>
+            </button>
           </div>
 
           {/* Input Box */}
@@ -217,7 +292,7 @@ export const FaqChatbot: React.FC = () => {
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask about membership, location, fee..."
+              placeholder="Ask about membership, fee, location..."
               className="flex-1 bg-[#071116] border border-[#C7A15A]/30 rounded-xl px-3.5 py-2 text-xs text-[#F4F0E8] placeholder-[#F4F0E8]/40 focus:outline-none focus:border-[#C7A15A]"
             />
             <button
@@ -228,6 +303,112 @@ export const FaqChatbot: React.FC = () => {
               <Send className="w-4 h-4" />
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Offline Message / Live CSR Fallback Modal */}
+      {showOfflineModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl bg-[#071116] border border-[#C7A15A]/40 p-6 shadow-2xl text-left space-y-4">
+            <div className="flex justify-between items-center border-b border-[#C7A15A]/20 pb-3">
+              <div>
+                <h3 className="text-base font-serif font-semibold text-[#F4F0E8]">Live CSR Handoff & Fallback</h3>
+                <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider mt-0.5">Live Representative Currently Unavailable</p>
+              </div>
+              <button
+                onClick={() => setShowOfflineModal(false)}
+                className="p-1 rounded text-[#F4F0E8]/60 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {offlineSuccess ? (
+              <div className="py-8 text-center space-y-3">
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
+                <h4 className="text-sm font-semibold text-[#F4F0E8]">Message Received</h4>
+                <p className="text-xs text-[#F4F0E8]/70">Your message has been logged in GuaranteedCRM. Our concierge team will call you back shortly.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-[#F4F0E8]/80 leading-relaxed">
+                  Our live chat representatives are currently assisting other guests. You can reach us instantly on WhatsApp or leave an offline callback request:
+                </p>
+
+                <div className="flex gap-2">
+                  <a
+                    href={liveCsrUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#0B1C26] border border-[#C7A15A]/40 text-[#D6B978] text-xs font-semibold text-center hover:border-[#C7A15A] transition"
+                  >
+                    💬 Continue on WhatsApp
+                  </a>
+                </div>
+
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-[#C7A15A]/20"></div>
+                  <span className="flex-shrink mx-3 text-[10px] uppercase text-[#C7A15A]">OR LEAVE A MESSAGE</span>
+                  <div className="flex-grow border-t border-[#C7A15A]/20"></div>
+                </div>
+
+                <form onSubmit={handleOfflineSubmit} className="space-y-3">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-[#C7A15A] mb-1">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={offlineForm.fullName}
+                      onChange={(e) => setOfflineForm((prev) => ({ ...prev, fullName: e.target.value }))}
+                      placeholder="e.g. Tariq Mahmood"
+                      className="w-full bg-[#0B1C26] border border-[#C7A15A]/30 rounded-xl px-3 py-2 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-[#C7A15A] mb-1">Phone Number *</label>
+                      <input
+                        type="text"
+                        required
+                        value={offlineForm.phone}
+                        onChange={(e) => setOfflineForm((prev) => ({ ...prev, phone: e.target.value }))}
+                        placeholder="+92 300 1234567"
+                        className="w-full bg-[#0B1C26] border border-[#C7A15A]/30 rounded-xl px-3 py-2 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-[#C7A15A] mb-1">Email Address</label>
+                      <input
+                        type="email"
+                        value={offlineForm.email}
+                        onChange={(e) => setOfflineForm((prev) => ({ ...prev, email: e.target.value }))}
+                        placeholder="client@example.com"
+                        className="w-full bg-[#0B1C26] border border-[#C7A15A]/30 rounded-xl px-3 py-2 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-[#C7A15A] mb-1">Message / Questions *</label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={offlineForm.message}
+                      onChange={(e) => setOfflineForm((prev) => ({ ...prev, message: e.target.value }))}
+                      placeholder="Please specify your question or callback request details..."
+                      className="w-full bg-[#0B1C26] border border-[#C7A15A]/30 rounded-xl px-3 py-2 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={offlineSubmitting}
+                    className="w-full py-2.5 rounded-xl bg-[#C7A15A] text-[#071116] font-bold text-xs uppercase tracking-wider hover:bg-[#D6B978] transition"
+                  >
+                    {offlineSubmitting ? 'Submitting Message...' : 'Request Callback'}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
         </div>
       )}
     </>

@@ -67,3 +67,44 @@ Connects website visitors directly to a Live CSR in the GuaranteedCRM Conversati
 1. Submit a message in the chat widget on `http://localhost:3000/`.
 2. What Antigravity should test afterward: Verify the message appears live in the GuaranteedCRM Conversations inbox.
 
+---
+
+## 3. MARKHOR CLUB CONVERSATION AI & KNOWLEDGE BASE
+
+### STATUS
+`MANUAL SETUP REQUIRED — CONVERSATION AI AGENT`
+
+### WHAT IS MISSING
+Native GuaranteedCRM Conversation AI Agent configuration for automated lead capture and knowledge base Q&A directly inside the CRM.
+
+### WHY IT IS REQUIRED
+Routes visitor webchat and WhatsApp conversations through GuaranteedCRM's native AI engine before escalating to a human CSR. The website currently runs a local grounded AI engine (`src/lib/crm/knowledge-base.ts`) as a resilient fallback.
+
+### MENU PATH
+1. Log in to GuaranteedCRM / GoHighLevel dashboard.
+2. Go to **AI Agents** (or **Automation**) → **Conversation AI**.
+3. Click **Create Bot** (or **+ Add Bot**).
+
+### EXACT SETUP / WHAT VALUES ARE REQUIRED
+- **Bot Name**: `Markhor Club Concierge`
+- **Role**: Digital membership & visitor concierge for Markhor Club.
+- **Primary Purpose**: Answer verified FAQs, capture membership leads, assist with VIP site visit requests, and route to a live representative.
+- **Tone**: Premium, professional, warm, concise, hospitality-led.
+- **Knowledge Base Categories**: Add the 10 verified categories defined in `src/lib/crm/knowledge-base.ts`:
+  1. `01 ABOUT MARKHOR CLUB` (500 Kanal luxury estate destination by Markhor Group)
+  2. `02 LOCATION & ACCESS` (Near Alexander Road, Khanpur Dam, KPK, approx. 2 KM)
+  3. `03 MEMBERSHIP & PRICING` (Pre-launch fee PKR 500,000, locked upon application)
+  4. `04 CLUBHOUSE & AMENITIES` (Restaurants, Gym, Indoor Sports, Jacuzzi, Pools)
+  5. `05 OUTDOOR & EQUESTRIAN` (Horse Riding, Golf, Boating, Jet Ski, Zipline)
+  6. `06 AQUA THEME PARK` (Multi-generational water park destination)
+  7. `07 BOOK A VISIT` (VIP site visit tours for the 500 Kanal estate)
+  8. `08 CONTACT` (UAN 0995-111-222-333, info@markhourgroup.com, WhatsApp +923305230888)
+  9. `09 PAYMENTS` (Bank Transfer, Cash, Cheque, Card with official receipt numbers)
+  10. `10 HUMAN SUPPORT` (Live CSR handoff & offline callback logging)
+
+### HOW TO VERIFY CONNECTION
+1. Send a message to the CRM Webchat or WhatsApp channel.
+2. Ask: *"What is the membership fee?"* -> Bot responds: *"The current pre-launch membership fee for Markhor Club is PKR 500,000."*
+3. Ask unverified query: *"How many rooms does the resort have?"* -> Bot responds: *"I don't have verified information for that yet. I can connect you with a Markhor Club representative."*
+
+

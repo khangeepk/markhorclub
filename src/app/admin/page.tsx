@@ -747,6 +747,22 @@ export default function AdminPortalPage() {
 
                 <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
                   <div>
+                    <div className="font-semibold text-[#F4F0E8]">Conversation AI</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">Markhor Club Concierge</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">ACTIVE</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[#F4F0E8]">Knowledge Base</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">10 Categories Verified</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">PREPARED</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
                     <div className="font-semibold text-[#F4F0E8]">WhatsApp Business</div>
                     <div className="text-[10px] text-[#F4F0E8]/50">LC Phone / WABA</div>
                   </div>
@@ -764,17 +780,17 @@ export default function AdminPortalPage() {
                 <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
                   <div>
                     <div className="font-semibold text-[#F4F0E8]">Live CRM Chat</div>
-                    <div className="text-[10px] text-[#F4F0E8]/50">Markhor VIP Concierge</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">Website Webchat Embed</div>
                   </div>
                   <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-950 text-amber-400 border border-amber-500/30">MANUAL SETUP REQ</span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
                   <div>
-                    <div className="font-semibold text-[#F4F0E8]">Email Fallback</div>
-                    <div className="text-[10px] text-[#F4F0E8]/50">Admin Email Notifications</div>
+                    <div className="font-semibold text-[#F4F0E8]">Live CSR Handoff</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">WhatsApp & Offline Logging</div>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">ACTIVE</span>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">FALLBACK READY</span>
                 </div>
               </div>
             </div>
