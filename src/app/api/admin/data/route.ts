@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { getMarkhorPipelineConfig } from '@/lib/crm/pipelines'
+import { getAudioManifestDiagnostics } from '@/lib/voice/concierge-audio'
 
 export async function GET() {
   try {
@@ -105,6 +106,9 @@ export async function GET() {
     // 10. Discovered Pipeline Config
     const pipelineConfig = await getMarkhorPipelineConfig().catch(() => null)
 
+    // 11. Voice Diagnostics
+    const voiceDiagnostics = getAudioManifestDiagnostics()
+
     return NextResponse.json({
       success: true,
       currentUser: session,
@@ -130,6 +134,7 @@ export async function GET() {
       syncJobs,
       auditLogs,
       pipelineConfig,
+      voiceDiagnostics,
     })
   } catch (error: any) {
     return NextResponse.json(

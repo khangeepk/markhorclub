@@ -817,6 +817,42 @@ Created `src/lib/crm/` with:
 - **Voice API QA**: PASS (`POST /api/voice/synthesize` returned `MODE_C_MANUAL_CACHE` with audio asset URL)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-VOICE-INTEGRATE-06 — VOCOGEN VOICE CONCIERGE PRODUCTION INTEGRATION
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform`
+
+### VOICE ARCHITECTURE & VOCOGEN INTEGRATION MODE
+1. **Selected Mode**: **MODE C — HYBRID** (VocoGen pre-generated audio library + safe browser WebSpeech API system fallback for dynamic responses).
+2. **Official API Verification**: NOT CONFIRMED (No official developer API key configured in `.env.local`). Automated REST API client (`VocoGenVoiceProvider` in `src/lib/voice/vocogen.ts`) is ready to auto-upgrade to **MODE A — VOCOGEN OFFICIAL API** as soon as `VOCOGEN_API_KEY` is provided.
+3. **Audio Manifest Architecture**: Created `src/lib/voice/concierge-audio.ts` defining 14 mandatory audio assets across English and Urdu (`welcome`, `fee`, `location`, `amenities`, `book_visit`, `human_support`, `csr_offline`).
+4. **Enhanced Chatbot Voice UX**:
+   - Integrated minimal luxury Audio Player (`Play`, `Pause`, `Replay`) into `FaqChatbot.tsx`.
+   - Single active audio playback enforced (playing a response automatically stops any previously active audio).
+   - `EN` / `UR` language selector toggle in Concierge header.
+   - Microphone dictation input (Web Speech API) with browser compatibility detection.
+5. **Request a Callback Workflow**:
+   - Added dedicated Callback Request tab collecting Full Name, Phone, Preferred Time (`Morning`, `Afternoon`, `Evening`), and optional notes.
+   - Saves callback requests locally and syncs to GuaranteedCRM as a lead / opportunity activity note (`action: 'requestCallback'`).
+6. **Admin Voice Diagnostics Panel**:
+   - Added Voice Concierge Status Card in Admin Portal (`/admin`) under CRM Sync tab.
+   - Displays overall status, VocoGen mode, English/Urdu asset counts, and individual file status tagged `PRESENT` or `AUDIO ASSET REQUIRED`.
+7. **Production Documentation & Voice Scripts**:
+   - Created `docs/MARKHOR-VOICE-SCRIPTS.md` containing official luxury concierge scripts in English and Urdu.
+   - Updated `docs/VOCOGEN-INTEGRATION.md` with step-by-step production audio pre-generation workflow and complete asset manifest checklist.
+8. **Security & Credit Protection**:
+   - User-triggered playback only (no auto-play on load).
+   - Input length capped at 500 characters max per synthesis request.
+   - Rate limiting enforced on `POST /api/voice/synthesize` (10 requests per 10 minutes per IP).
+   - Zero client-side API secrets.
+
+### QA & BUILD VERIFICATION
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
+- **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled cleanly)
+- **Localhost URL**: `http://localhost:3000`
 
 
 

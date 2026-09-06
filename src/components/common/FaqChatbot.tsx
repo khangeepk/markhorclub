@@ -1,7 +1,25 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { MessageSquare, X, Send, Bot, User, PhoneCall, Sparkles, Calendar, CheckCircle2, Volume2, VolumeX, Mic, Globe } from 'lucide-react'
+import {
+  MessageSquare,
+  X,
+  Send,
+  Bot,
+  User,
+  PhoneCall,
+  Sparkles,
+  Calendar,
+  CheckCircle2,
+  Volume2,
+  VolumeX,
+  Play,
+  Pause,
+  RotateCcw,
+  Mic,
+  Globe,
+  Clock,
+} from 'lucide-react'
 
 interface Message {
   id: string
@@ -16,15 +34,23 @@ export const FaqChatbot: React.FC = () => {
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [showOfflineModal, setShowOfflineModal] = useState(false)
+  const [modalTab, setModalTab] = useState<'message' | 'callback'>('message')
   const [language, setLanguage] = useState<'en' | 'ur'>('en')
 
   // Voice playback & recording state
   const [playingMsgId, setPlayingMsgId] = useState<string | null>(null)
+  const [isAudioPaused, setIsAudioPaused] = useState(false)
   const [isListeningMic, setIsListeningMic] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Offline message form state
-  const [offlineForm, setOfflineForm] = useState({ fullName: '', phone: '', email: '', message: '' })
+  // Offline message & Callback form state
+  const [offlineForm, setOfflineForm] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+    preferredTime: 'Morning (9am - 12pm)',
+    message: '',
+  })
   const [offlineSubmitting, setOfflineSubmitting] = useState(false)
   const [offlineSuccess, setOfflineSuccess] = useState(false)
 
@@ -43,7 +69,6 @@ export const FaqChatbot: React.FC = () => {
   const gcrmWidgetId = process.env.NEXT_PUBLIC_GCRM_CHAT_WIDGET_ID
 
   useEffect(() => {
-    // If GuaranteedCRM Chat Widget environment script is present, load it dynamically
     if (gcrmWidgetSrc && gcrmWidgetId) {
       const script = document.createElement('script')
       script.src = gcrmWidgetSrc
@@ -63,9 +88,24 @@ export const FaqChatbot: React.FC = () => {
     }
   }, [messages, isOpen])
 
+  // Stop any active audio playback
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
+    setPlayingMsgId(null)
+    setIsAudioPaused(false)
+  }
+
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend || inputMessage).trim()
     if (!text || loading) return
+
+    stopAudio()
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -96,7 +136,6 @@ export const FaqChatbot: React.FC = () => {
 
       setMessages((prev) => [...prev, botMsg])
 
-      // If user requested Live CSR handoff, offer offline fallback modal if CSR is offline
       if (data.intent === 'live_csr' || text.toLowerCase().includes('csr')) {
         setShowOfflineModal(true)
       }
@@ -115,20 +154,24 @@ export const FaqChatbot: React.FC = () => {
     }
   }
 
-  // Voice TTS Playback Handler (Listen Button)
-  const handleListen = async (msg: Message) => {
-    if (playingMsgId === msg.id) {
-      if (audioRef.current) {
+  // Voice TTS Playback Handler (Play / Pause / Replay)
+  const handleListenPlay = async (msg: Message) => {
+    // If clicking same active message: toggle Pause / Resume
+    if (playingMsgId === msg.id && audioRef.current) {
+      if (isAudioPaused) {
+        audioRef.current.play()
+        setIsAudioPaused(false)
+      } else {
         audioRef.current.pause()
+        setIsAudioPaused(true)
       }
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel()
-      }
-      setPlayingMsgId(null)
       return
     }
 
+    // Stop any previously playing audio response
+    stopAudio()
     setPlayingMsgId(msg.id)
+    setIsAudioPaused(false)
 
     try {
       const res = await fetch('/api/voice/synthesize', {
@@ -142,35 +185,43 @@ export const FaqChatbot: React.FC = () => {
         const url = URL.createObjectURL(blob)
         const audio = new Audio(url)
         audioRef.current = audio
-        audio.onended = () => setPlayingMsgId(null)
+        audio.onended = () => stopAudio()
+        audio.onerror = () => stopAudio()
         audio.play()
         return
       }
 
       const data = await res.json()
+
       if (data.success && data.audioUrl) {
         const audio = new Audio(data.audioUrl)
         audioRef.current = audio
-        audio.onended = () => setPlayingMsgId(null)
+        audio.onended = () => stopAudio()
+        audio.onerror = () => stopAudio()
         audio.play()
         return
       }
 
-      // Browser Web Speech Fallback if server returned web_speech or no audio file
+      // Browser Web Speech Fallback if server returned web_speech
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel()
         const utterance = new SpeechSynthesisUtterance(msg.text)
         utterance.lang = language === 'ur' ? 'ur-PK' : 'en-US'
-        utterance.onend = () => setPlayingMsgId(null)
-        utterance.onerror = () => setPlayingMsgId(null)
+        utterance.onend = () => stopAudio()
+        utterance.onerror = () => stopAudio()
         window.speechSynthesis.speak(utterance)
       } else {
-        setPlayingMsgId(null)
+        stopAudio()
       }
     } catch (err) {
-      console.warn('Voice playback failed:', err)
-      setPlayingMsgId(null)
+      console.warn('Voice synthesis or playback failed:', err)
+      stopAudio()
     }
+  }
+
+  const handleListenReplay = (msg: Message) => {
+    stopAudio()
+    handleListenPlay(msg)
   }
 
   // Mic Speech Recognition Handler
@@ -179,7 +230,7 @@ export const FaqChatbot: React.FC = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
     if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser. Please type your message.')
+      alert('Speech recognition is not supported in this browser. Please type your query.')
       return
     }
 
@@ -197,7 +248,7 @@ export const FaqChatbot: React.FC = () => {
       recognition.onend = () => setIsListeningMic(false)
 
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript
+        const transcript = event.results[0][0]?.transcript
         if (transcript) {
           setInputMessage(transcript)
         }
@@ -209,21 +260,24 @@ export const FaqChatbot: React.FC = () => {
     }
   }
 
+  // Offline / Callback Submit Handler
   const handleOfflineSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!offlineForm.fullName || !offlineForm.phone || !offlineForm.message) return
+    if (!offlineForm.fullName || !offlineForm.phone) return
 
     setOfflineSubmitting(true)
     try {
+      const actionType = modalTab === 'callback' ? 'requestCallback' : 'leaveMessage'
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'leaveMessage',
+          action: actionType,
           fullName: offlineForm.fullName,
           phone: offlineForm.phone,
           email: offlineForm.email,
-          message: offlineForm.message,
+          preferredTime: offlineForm.preferredTime,
+          message: offlineForm.message || (modalTab === 'callback' ? 'VIP Concierge Callback Request' : 'Offline Message'),
         }),
       })
       const json = await res.json()
@@ -232,11 +286,17 @@ export const FaqChatbot: React.FC = () => {
         setTimeout(() => {
           setShowOfflineModal(false)
           setOfflineSuccess(false)
-          setOfflineForm({ fullName: '', phone: '', email: '', message: '' })
-        }, 2000)
+          setOfflineForm({
+            fullName: '',
+            phone: '',
+            email: '',
+            preferredTime: 'Morning (9am - 12pm)',
+            message: '',
+          })
+        }, 2500)
       }
     } catch {
-      alert('Failed to submit message. Please try WhatsApp.')
+      alert('Submission failed. Please reach us via WhatsApp.')
     } finally {
       setOfflineSubmitting(false)
     }
@@ -248,6 +308,7 @@ export const FaqChatbot: React.FC = () => {
     'Amenities',
     'Aqua Theme Park',
     'Book a Visit',
+    'Request Callback',
     'Speak to Live CSR',
   ]
 
@@ -257,7 +318,7 @@ export const FaqChatbot: React.FC = () => {
 
   return (
     <>
-      {/* Floating Chatbot Launcher Button (Bottom Left - NO OVERLAP WITH WHATSAPP ON BOTTOM RIGHT) */}
+      {/* Floating Chatbot Launcher Button (Bottom Left) */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Open Markhor VIP Concierge Chat"
@@ -274,7 +335,7 @@ export const FaqChatbot: React.FC = () => {
 
       {/* Main Luxury Concierge Modal */}
       {isOpen && (
-        <div className="fixed bottom-24 left-6 z-50 w-[92vw] sm:w-[390px] h-[550px] rounded-2xl bg-[#071116] border border-[#C7A15A]/40 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-24 left-6 z-50 w-[92vw] sm:w-[390px] h-[560px] rounded-2xl bg-[#071116] border border-[#C7A15A]/40 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5 bg-[#0B1C26] border-b border-[#C7A15A]/20">
             <div className="flex items-center gap-3">
@@ -283,7 +344,7 @@ export const FaqChatbot: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-serif font-medium text-[#F4F0E8] tracking-wide">Markhor Club Concierge</h3>
-                <p className="text-[10px] tracking-wider text-[#C7A15A] uppercase">AI Powered • Voice Ready</p>
+                <p className="text-[10px] tracking-wider text-[#C7A15A] uppercase">AI Powered • Voice Concierge</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -312,6 +373,10 @@ export const FaqChatbot: React.FC = () => {
                 key={act}
                 onClick={() => {
                   if (act === 'Speak to Live CSR') {
+                    setModalTab('message')
+                    setShowOfflineModal(true)
+                  } else if (act === 'Request Callback') {
+                    setModalTab('callback')
                     setShowOfflineModal(true)
                   } else {
                     handleSend(act)
@@ -319,7 +384,7 @@ export const FaqChatbot: React.FC = () => {
                 }}
                 className="whitespace-nowrap px-3 py-1 rounded-full text-[11px] tracking-wider text-[#D6B978] bg-[#0B1C26] border border-[#C7A15A]/30 hover:border-[#C7A15A] hover:bg-[#C7A15A]/10 transition-all duration-200"
               >
-                {act === 'Speak to Live CSR' ? '💬 Live CSR' : act}
+                {act === 'Speak to Live CSR' ? '💬 Live CSR' : act === 'Request Callback' ? '📞 Callback' : act}
               </button>
             ))}
           </div>
@@ -356,27 +421,52 @@ export const FaqChatbot: React.FC = () => {
                     </a>
                   )}
 
-                  <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
-                    {/* Listen Button for Voice Output */}
+                  <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-white/10">
+                    {/* Minimal Audio Player for Voice Output */}
                     {msg.sender === 'bot' ? (
-                      <button
-                        onClick={() => handleListen(msg)}
-                        className="inline-flex items-center gap-1 text-[10px] font-medium text-[#C7A15A] hover:text-[#D6B978] transition"
-                        title="Listen to voice synthesis"
-                      >
-                        {playingMsgId === msg.id ? (
-                          <>
-                            <VolumeX className="w-3 h-3 text-rose-400 animate-pulse" />
-                            <span className="text-rose-400">Stop</span>
-                          </>
-                        ) : (
-                          <>
-                            <Volume2 className="w-3 h-3" />
-                            <span>Listen</span>
-                          </>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleListenPlay(msg)}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wider transition border ${
+                            playingMsgId === msg.id
+                              ? 'bg-[#C7A15A] text-[#071116] border-[#C7A15A]'
+                              : 'bg-[#071116] text-[#C7A15A] border-[#C7A15A]/40 hover:border-[#C7A15A]'
+                          }`}
+                          title={playingMsgId === msg.id ? (isAudioPaused ? 'Resume Voice' : 'Pause Voice') : 'Listen to Voice Answer'}
+                        >
+                          {playingMsgId === msg.id ? (
+                            isAudioPaused ? (
+                              <>
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                <span>Resume</span>
+                              </>
+                            ) : (
+                              <>
+                                <Pause className="w-2.5 h-2.5 fill-current animate-pulse" />
+                                <span>Pause</span>
+                              </>
+                            )
+                          ) : (
+                            <>
+                              <Volume2 className="w-2.5 h-2.5" />
+                              <span>Listen</span>
+                            </>
+                          )}
+                        </button>
+
+                        {playingMsgId === msg.id && (
+                          <button
+                            onClick={() => handleListenReplay(msg)}
+                            className="p-1 rounded-full text-[#C7A15A] hover:text-white transition"
+                            title="Replay Voice Answer"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                          </button>
                         )}
-                      </button>
-                    ) : <span />}
+                      </div>
+                    ) : (
+                      <span />
+                    )}
 
                     <span
                       className={`block text-[9px] ${
@@ -405,13 +495,27 @@ export const FaqChatbot: React.FC = () => {
 
           {/* CSR Connect / Fallback Banner */}
           <div className="px-4 py-2 bg-[#0B1C26]/90 border-t border-[#C7A15A]/20 flex items-center justify-between text-[11px] text-[#F4F0E8]/80">
-            <span>Speak to a human representative?</span>
-            <button
-              onClick={() => setShowOfflineModal(true)}
-              className="flex items-center gap-1 text-[#C7A15A] hover:underline font-medium"
-            >
-              <PhoneCall className="w-3 h-3" /> Connect to CSR
-            </button>
+            <span>Need human support?</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setModalTab('callback')
+                  setShowOfflineModal(true)
+                }}
+                className="text-[#C7A15A] hover:underline font-medium flex items-center gap-1"
+              >
+                <PhoneCall className="w-3 h-3" /> Callback
+              </button>
+              <button
+                onClick={() => {
+                  setModalTab('message')
+                  setShowOfflineModal(true)
+                }}
+                className="text-[#C7A15A] hover:underline font-medium"
+              >
+                Connect CSR
+              </button>
+            </div>
           </div>
 
           {/* Input Box */}
@@ -426,7 +530,7 @@ export const FaqChatbot: React.FC = () => {
             <button
               type="button"
               onClick={handleMicClick}
-              title="Dictate with voice"
+              title="Dictate message with microphone"
               className={`p-2 rounded-xl border transition-colors ${
                 isListeningMic
                   ? 'bg-rose-950 border-rose-500 text-rose-400 animate-pulse'
@@ -440,7 +544,7 @@ export const FaqChatbot: React.FC = () => {
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={isListeningMic ? 'Listening...' : 'Ask about membership, fee, location...'}
+              placeholder={isListeningMic ? 'Listening...' : 'Ask about fee, location, amenities...'}
               className="flex-1 bg-[#071116] border border-[#C7A15A]/30 rounded-xl px-3.5 py-2 text-xs text-[#F4F0E8] placeholder-[#F4F0E8]/40 focus:outline-none focus:border-[#C7A15A]"
             />
             <button
@@ -454,14 +558,18 @@ export const FaqChatbot: React.FC = () => {
         </div>
       )}
 
-      {/* Offline Message / Live CSR Fallback Modal */}
+      {/* Offline Message / Callback Modal */}
       {showOfflineModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-md rounded-2xl bg-[#071116] border border-[#C7A15A]/40 p-6 shadow-2xl text-left space-y-4">
             <div className="flex justify-between items-center border-b border-[#C7A15A]/20 pb-3">
               <div>
-                <h3 className="text-base font-serif font-semibold text-[#F4F0E8]">Live CSR Handoff & Fallback</h3>
-                <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider mt-0.5">Live Representative Currently Unavailable</p>
+                <h3 className="text-base font-serif font-semibold text-[#F4F0E8]">
+                  {modalTab === 'callback' ? 'Request a Callback' : 'Live CSR Handoff'}
+                </h3>
+                <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider mt-0.5">
+                  {modalTab === 'callback' ? 'Schedule a Call with Concierge' : 'Offline Representative Support'}
+                </p>
               </div>
               <button
                 onClick={() => setShowOfflineModal(false)}
@@ -471,18 +579,44 @@ export const FaqChatbot: React.FC = () => {
               </button>
             </div>
 
+            {/* Modal Subtabs */}
+            <div className="flex border-b border-[#C7A15A]/20">
+              <button
+                onClick={() => setModalTab('message')}
+                className={`py-2 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 transition ${
+                  modalTab === 'message'
+                    ? 'border-[#C7A15A] text-[#C7A15A]'
+                    : 'border-transparent text-[#F4F0E8]/50 hover:text-[#F4F0E8]'
+                }`}
+              >
+                Leave Message
+              </button>
+              <button
+                onClick={() => setModalTab('callback')}
+                className={`py-2 px-4 text-xs font-semibold uppercase tracking-wider border-b-2 transition ${
+                  modalTab === 'callback'
+                    ? 'border-[#C7A15A] text-[#C7A15A]'
+                    : 'border-transparent text-[#F4F0E8]/50 hover:text-[#F4F0E8]'
+                }`}
+              >
+                Request Callback
+              </button>
+            </div>
+
             {offlineSuccess ? (
               <div className="py-8 text-center space-y-3">
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-                <h4 className="text-sm font-semibold text-[#F4F0E8]">Message Received</h4>
-                <p className="text-xs text-[#F4F0E8]/70">Your message has been logged in GuaranteedCRM. Our concierge team will call you back shortly.</p>
+                <h4 className="text-sm font-semibold text-[#F4F0E8]">
+                  {modalTab === 'callback' ? 'Callback Request Scheduled' : 'Message Logged'}
+                </h4>
+                <p className="text-xs text-[#F4F0E8]/70">
+                  {modalTab === 'callback'
+                    ? 'Your request has been saved and synced to GuaranteedCRM. Our concierge will contact you at your preferred time.'
+                    : 'Your message has been received. A Markhor Club representative will respond shortly.'}
+                </p>
               </div>
             ) : (
               <>
-                <p className="text-xs text-[#F4F0E8]/80 leading-relaxed">
-                  Our live chat representatives are currently assisting other guests. You can reach us instantly on WhatsApp or leave an offline callback request:
-                </p>
-
                 <div className="flex gap-2">
                   <a
                     href={liveCsrUrl}
@@ -490,14 +624,8 @@ export const FaqChatbot: React.FC = () => {
                     rel="noopener noreferrer"
                     className="flex-1 py-2.5 px-3 rounded-xl bg-[#0B1C26] border border-[#C7A15A]/40 text-[#D6B978] text-xs font-semibold text-center hover:border-[#C7A15A] transition"
                   >
-                    💬 Continue on WhatsApp
+                    💬 Chat on WhatsApp Instant
                   </a>
-                </div>
-
-                <div className="relative flex py-1 items-center">
-                  <div className="flex-grow border-t border-[#C7A15A]/20"></div>
-                  <span className="flex-shrink mx-3 text-[10px] uppercase text-[#C7A15A]">OR LEAVE A MESSAGE</span>
-                  <div className="flex-grow border-t border-[#C7A15A]/20"></div>
                 </div>
 
                 <form onSubmit={handleOfflineSubmit} className="space-y-3">
@@ -535,14 +663,32 @@ export const FaqChatbot: React.FC = () => {
                       />
                     </div>
                   </div>
+
+                  {modalTab === 'callback' && (
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-[#C7A15A] mb-1">Preferred Time *</label>
+                      <select
+                        value={offlineForm.preferredTime}
+                        onChange={(e) => setOfflineForm((prev) => ({ ...prev, preferredTime: e.target.value }))}
+                        className="w-full bg-[#0B1C26] border border-[#C7A15A]/30 rounded-xl px-3 py-2 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
+                      >
+                        <option value="Morning (9am - 12pm)">Morning (9:00 AM - 12:00 PM)</option>
+                        <option value="Afternoon (12pm - 5pm)">Afternoon (12:00 PM - 5:00 PM)</option>
+                        <option value="Evening (5pm - 8pm)">Evening (5:00 PM - 8:00 PM)</option>
+                      </select>
+                    </div>
+                  )}
+
                   <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-[#C7A15A] mb-1">Message / Questions *</label>
+                    <label className="block text-[10px] uppercase tracking-wider text-[#C7A15A] mb-1">
+                      {modalTab === 'callback' ? 'Notes / Questions (Optional)' : 'Message *'}
+                    </label>
                     <textarea
-                      required
+                      required={modalTab === 'message'}
                       rows={2}
                       value={offlineForm.message}
                       onChange={(e) => setOfflineForm((prev) => ({ ...prev, message: e.target.value }))}
-                      placeholder="Please specify your question or callback request details..."
+                      placeholder={modalTab === 'callback' ? 'Specify any topic you wish to discuss...' : 'Your message or question...'}
                       className="w-full bg-[#0B1C26] border border-[#C7A15A]/30 rounded-xl px-3 py-2 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
                     />
                   </div>
@@ -551,7 +697,11 @@ export const FaqChatbot: React.FC = () => {
                     disabled={offlineSubmitting}
                     className="w-full py-2.5 rounded-xl bg-[#C7A15A] text-[#071116] font-bold text-xs uppercase tracking-wider hover:bg-[#D6B978] transition"
                   >
-                    {offlineSubmitting ? 'Submitting Message...' : 'Request Callback'}
+                    {offlineSubmitting
+                      ? 'Submitting...'
+                      : modalTab === 'callback'
+                      ? 'Schedule Callback Request'
+                      : 'Send Message'}
                   </button>
                 </form>
               </>

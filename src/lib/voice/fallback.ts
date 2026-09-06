@@ -1,14 +1,6 @@
 import { VoiceProvider, SynthesizeOptions, SynthesizeResult } from './types'
+import { CONCIERGE_AUDIO_MANIFEST } from './concierge-audio'
 import crypto from 'crypto'
-
-// Pre-generated static audio asset mapping for core Markhor FAQs
-const PREGENERATED_AUDIO_MAP: Record<string, string> = {
-  fee: '/assets/audio/concierge/membership-fee.mp3',
-  location: '/assets/audio/concierge/location-khanpur.mp3',
-  amenities: '/assets/audio/concierge/amenities-overview.mp3',
-  aqua: '/assets/audio/concierge/aqua-theme-park.mp3',
-  visit: '/assets/audio/concierge/book-a-visit.mp3',
-}
 
 // In-memory audio cache for normalized text hashes
 const inMemoryAudioCache = new Map<string, { audioUrl: string; timestamp: number }>()
@@ -30,19 +22,34 @@ export class FallbackVoiceProvider implements VoiceProvider {
     const text = options.text.trim()
     const cleanLower = text.toLowerCase()
 
-    // 1. Check Pre-generated Audio Mapping
+    // 1. Check Pre-generated Audio Mapping from CONCIERGE_AUDIO_MANIFEST
+    let targetKey: string | null = null
+
+    if (cleanLower.includes('welcome') || cleanLower.includes('خوش آمدید')) {
+      targetKey = 'welcome'
+    } else if (cleanLower.includes('500,000') || cleanLower.includes('fee') || cleanLower.includes('price') || cleanLower.includes('فیس')) {
+      targetKey = 'fee'
+    } else if (cleanLower.includes('alexander road') || cleanLower.includes('location') || cleanLower.includes('khanpur') || cleanLower.includes('واقع')) {
+      targetKey = 'location'
+    } else if (cleanLower.includes('amenities') || cleanLower.includes('restaurants') || cleanLower.includes('jacuzzi') || cleanLower.includes('سہولیات')) {
+      targetKey = 'amenities'
+    } else if (cleanLower.includes('visit') || cleanLower.includes('tour') || cleanLower.includes('وزٹ')) {
+      targetKey = 'book_visit'
+    } else if (cleanLower.includes('human') || cleanLower.includes('csr') || cleanLower.includes('representative') || cleanLower.includes('نمائندے')) {
+      targetKey = 'human_support'
+    } else if (cleanLower.includes('offline') || cleanLower.includes('leave a message') || cleanLower.includes('کال بیک')) {
+      targetKey = 'csr_offline'
+    }
+
     let audioUrl: string | undefined = undefined
 
-    if (cleanLower.includes('500,000') || cleanLower.includes('fee') || cleanLower.includes('price')) {
-      audioUrl = PREGENERATED_AUDIO_MAP.fee
-    } else if (cleanLower.includes('alexander road') || cleanLower.includes('location') || cleanLower.includes('khanpur')) {
-      audioUrl = PREGENERATED_AUDIO_MAP.location
-    } else if (cleanLower.includes('amenities') || cleanLower.includes('restaurants') || cleanLower.includes('jacuzzi')) {
-      audioUrl = PREGENERATED_AUDIO_MAP.amenities
-    } else if (cleanLower.includes('aqua') || cleanLower.includes('slides')) {
-      audioUrl = PREGENERATED_AUDIO_MAP.aqua
-    } else if (cleanLower.includes('visit') || cleanLower.includes('tour')) {
-      audioUrl = PREGENERATED_AUDIO_MAP.visit
+    if (targetKey) {
+      const item = CONCIERGE_AUDIO_MANIFEST.find(
+        (a) => a.key === targetKey && a.language === language
+      )
+      if (item) {
+        audioUrl = item.path
+      }
     }
 
     // 2. Check In-Memory Audio Hash Cache
@@ -79,3 +86,4 @@ export class FallbackVoiceProvider implements VoiceProvider {
     }
   }
 }
+

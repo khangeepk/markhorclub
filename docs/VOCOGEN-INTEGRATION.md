@@ -1,67 +1,82 @@
 # VOCOGEN VOICE CONCIERGE INTEGRATION GUIDE
 
-This document details the technical integration architecture and operational guide for using **VocoGen** as the voice output layer for the Markhor Club Concierge.
+**Status**: ACTIVE — MODE C (HYBRID PRE-GENERATED AUDIO + WEBSPEECH FALLBACK) / MODE A & B API READY
 
 ---
 
-## 1. INTEGRATION STATUS & MODE
+## 1. Overview
 
-### CURRENT STATUS
-`MODE C — MANUAL / PRE-GENERATED AUDIO CACHE`
+The **Markhor Club Voice Concierge** integrates VocoGen text-to-speech technology to provide an audio-enabled Concierge experience for visitors inquiring about Markhor Club, membership fees, location, amenities, and site visits.
 
-### ARCHITECTURE SUMMARY
-The Markhor website voice layer (`src/lib/voice/`) implements a provider abstraction that supports:
-- **Server-Side VocoGen REST API Client** (`src/lib/voice/vocogen.ts`)
-- **Normalized Audio Hash Cache & Pre-Generated Assets** (`src/lib/voice/fallback.ts`)
-- **Browser Web Speech Synthesis Fallback**
+To protect voice credits, prevent arbitrary endpoint abuse, and maintain zero client-side secret exposure, the integration supports two modes:
 
-Because VocoGen account API credentials (`VOCOGEN_API_KEY`) are not yet configured in `.env.local`, the application runs safely in **MODE C**, utilizing local pre-generated audio assets and browser speech synthesis without attempting unauthorized web scraping or browser cookie hacks.
+1. **Automated REST API Mode (MODE A / MODE B)**: Activates automatically when `VOCOGEN_API_KEY` is provided in `.env.local`.
+2. **Pre-generated Audio Library Mode (MODE C — Default)**: Uses pre-generated studio audio files stored locally under `/public/assets/audio/concierge/` with browser WebSpeech API as a progressive fallback for dynamic responses.
 
 ---
 
-## 2. PRE-GENERATED AUDIO WORKFLOW (RECOMMENDED)
+## 2. Production Audio Generation Workflow
 
-To utilize your existing VocoGen subscription credits immediately without code changes:
+If operating in **MODE C (Pre-generated Audio Library)**, follow these steps to generate high-quality audio clips using your active VocoGen account:
 
-1. Log in to your **VocoGen Account Dashboard**.
-2. Select your preferred luxury concierge voice model (e.g. warm, hospitality-led tone).
-3. Generate audio for the following 5 key Markhor Club verified responses:
+### Step 1: Open VocoGen Web UI
+Navigate to your active VocoGen dashboard and open **Text-to-Speech** or **Voice Library**.
 
-### AUDIO ASSET MAP
-| FAQ Response | Wording | Local File Path |
-| :--- | :--- | :--- |
-| **Membership Fee** | *"The current pre-launch membership fee for Markhor Club is PKR 500,000. Fee terms are locked upon application submission."* | `/public/assets/audio/concierge/membership-fee.mp3` |
-| **Location** | *"Markhor Club is located near Alexander Road, Khanpur Dam, KPK, Pakistan, approximately 2 KM from Alexander Road."* | `/public/assets/audio/concierge/location-khanpur.mp3` |
-| **Amenities** | *"Amenities include Signature Restaurants, Fitness Gym, Indoor Sports, Hydrotherapy Jacuzzi, and Shoreline Swimming Pools."* | `/public/assets/audio/concierge/amenities-overview.mp3` |
-| **Aqua Theme Park** | *"The Aqua Theme Park is a multi-generational water park destination featuring aquatic adventure slides and family leisure facilities."* | `/public/assets/audio/concierge/aqua-theme-park.mp3` |
-| **Book a Visit** | *"We would be delighted to host you for a VIP tour of our 500 Kanal Khanpur Dam estate."* | `/public/assets/audio/concierge/book-a-visit.mp3` |
+### Step 2: Select Voice Persona
+- **English**: Select a sophisticated, warm, British or Neutral international accent (Recommended VocoGen voice: `markhor-concierge-en` or equivalent luxury voice).
+- **Urdu**: Select a natural, clear Pakistani Urdu voice persona (Recommended VocoGen voice: `markhor-concierge-ur`).
 
-4. Download the generated `.mp3` files from VocoGen and place them in:
-   `public/assets/audio/concierge/`
+### Step 3: Copy Approved Scripts
+Copy the exact verified scripts from `docs/MARKHOR-VOICE-SCRIPTS.md`.
 
-The Markhor Concierge Listen button will immediately serve these pre-generated VocoGen audio files!
+### Step 4: Synthesize & Download
+Synthesize each script in VocoGen at **1.0x speed** in **MP3 (44.1kHz / 192kbps)** format.
+
+### Step 5: Save & Rename
+Save each downloaded file using the exact filenames listed in the **Asset Manifest Checklist** below:
+
+Place files inside: `/public/assets/audio/concierge/`
 
 ---
 
-## 3. UPGRADING TO AUTOMATED REST API (MODE B)
+## 3. Asset Manifest Checklist (14 Audio Files)
 
-When your VocoGen account API key is generated, activate server-side TTS by adding these keys to `.env.local`:
+| File Key | Filename | Language | Topic | Required Location |
+| --- | --- | --- | --- | --- |
+| `welcome_en` | `welcome-en.mp3` | English | Welcome Greeting | `/public/assets/audio/concierge/welcome-en.mp3` |
+| `welcome_ur` | `welcome-ur.mp3` | Urdu | Welcome Greeting | `/public/assets/audio/concierge/welcome-ur.mp3` |
+| `membership_fee_en` | `membership-fee-en.mp3` | English | Membership Fee (PKR 500,000) | `/public/assets/audio/concierge/membership-fee-en.mp3` |
+| `membership_fee_ur` | `membership-fee-ur.mp3` | Urdu | Membership Fee (PKR 500,000) | `/public/assets/audio/concierge/membership-fee-ur.mp3` |
+| `location_en` | `location-en.mp3` | English | Khanpur Dam Location | `/public/assets/audio/concierge/location-en.mp3` |
+| `location_ur` | `location-ur.mp3` | Urdu | Khanpur Dam Location | `/public/assets/audio/concierge/location-ur.mp3` |
+| `amenities_en` | `amenities-en.mp3` | English | 5 Signature Amenities | `/public/assets/audio/concierge/amenities-en.mp3` |
+| `amenities_ur` | `amenities-ur.mp3` | Urdu | 5 Signature Amenities | `/public/assets/audio/concierge/amenities-ur.mp3` |
+| `book_visit_en` | `book-visit-en.mp3` | English | VIP Site Visit | `/public/assets/audio/concierge/book-visit-en.mp3` |
+| `book_visit_ur` | `book-visit-ur.mp3` | Urdu | VIP Site Visit | `/public/assets/audio/concierge/book-visit-ur.mp3` |
+| `human_support_en` | `human-support-en.mp3` | English | Live CSR Escalation | `/public/assets/audio/concierge/human-support-en.mp3` |
+| `human_support_ur` | `human-support-ur.mp3` | Urdu | Live CSR Escalation | `/public/assets/audio/concierge/human-support-ur.mp3` |
+| `csr_offline_en` | `csr-offline-en.mp3` | English | CSR Offline / Callback | `/public/assets/audio/concierge/csr-offline-en.mp3` |
+| `csr_offline_ur` | `csr-offline-ur.mp3` | Urdu | CSR Offline / Callback | `/public/assets/audio/concierge/csr-offline-ur.mp3` |
 
+---
+
+## 4. Enabling Automated REST API (Optional Mode A)
+
+If an official VocoGen developer API key is available for your account:
+
+1. Open `.env.local`
+2. Add your credentials:
 ```env
-# VocoGen API Credentials (SERVER-SIDE ONLY - NEVER EXPOSE TO CLIENT)
-VOCOGEN_API_KEY="your_vocogen_api_key_here"
+VOCOGEN_API_KEY="your_actual_vocogen_api_key"
 VOCOGEN_BASE_URL="https://api.vocogen.ai/v1"
 VOCOGEN_VOICE_ID="markhor-concierge-en"
 ```
-
-Once set, `src/lib/voice/provider.ts` will automatically switch to **MODE B — ASYNCHRONOUS TTS READY**, sending server-side requests to VocoGen's official `/text-to-speech` endpoint!
+3. Restart dev server (`npm run dev`). The system will automatically detect the key and upgrade to **MODE_A_API**.
 
 ---
 
-## 4. COST PROTECTION & SAFEGUARDS
-
-To protect your VocoGen credit balance:
-1. **No Autoplay**: Audio is synthesized ONLY when a user explicitly clicks the **Listen** button.
-2. **Text Normalization & Caching**: Identical FAQ answers return cached audio hashes without calling the API again.
-3. **Input Length Limit**: Server-side request text is capped at max **500 characters**.
-4. **Rate Limiting**: `/api/voice/synthesize` enforces a limit of **10 requests per 10 minutes** per IP.
+## 5. Security & Credit Protections
+- **No Autoplay**: Audio plays ONLY when the visitor explicitly clicks **Listen** or **Play**.
+- **Rate Limit**: API route `POST /api/voice/synthesize` is rate-limited to **10 requests per 10 minutes** per IP.
+- **Max Prompt Length**: Input text is capped at **500 characters**.
+- **Zero Secret Exposure**: VocoGen credentials are read exclusively server-side.

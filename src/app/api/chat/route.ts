@@ -51,6 +51,51 @@ export async function POST(request: Request) {
       })
     }
 
+    // 1b. Action: Request Callback for VIP Concierge
+    if (action === 'requestCallback') {
+      const { preferredTime } = body
+      if (!fullName || !phone) {
+        return NextResponse.json(
+          { success: false, error: 'Name and phone number are required for a callback request.' },
+          { status: 400 }
+        )
+      }
+
+      const noteContent = `Callback requested by ${fullName} (${phone}). Preferred Time/Day: ${preferredTime || 'As soon as possible'}. Note: ${message || 'VIP Concierge Callback'}`
+
+      const conv = await db.chatConversation.create({
+        data: {
+          visitorName: String(fullName).trim(),
+          visitorEmail: email ? String(email).trim().toLowerCase() : null,
+          visitorPhone: String(phone).trim(),
+          status: 'transferred_to_csr',
+          messages: {
+            create: [
+              { senderType: 'visitor', message: noteContent },
+              { senderType: 'bot', message: 'Callback request registered. Our concierge team will reach out to you.' },
+            ],
+          },
+        },
+      })
+
+      // Sync callback request to GuaranteedCRM Sync Jobs
+      await db.crmSyncJob.create({
+        data: {
+          entityType: 'contact',
+          entityId: conv.id,
+          eventName: 'chat_callback_request',
+          payload: JSON.stringify({ fullName, email, phone, preferredTime, message }),
+          status: 'pending',
+        },
+      }).catch(() => {})
+
+      return NextResponse.json({
+        success: true,
+        reply: `Thank you, ${String(fullName).trim()}. Your callback request has been logged. A Markhor Club concierge representative will call you at ${String(phone).trim()}.`,
+        conversationId: conv.id,
+      })
+    }
+
     // 2. Action: Chat Lead Capture (Convert interested visitor into CRM Contact + Opportunity)
     if (action === 'leadCapture') {
       if (!fullName || !phone) {
