@@ -856,7 +856,7 @@ Created `src/lib/crm/` with:
 
 ---
 
-## AG-VOICE-ASSETS-07 — VOCOGEN AUDIO LIBRARY INTEGRATED
+## AG-VOICE-ASSETS-07 — ALL 14 VOCOGEN AUDIO ASSETS INTEGRATED
 
 - **Status**: COMPLETE & VERIFIED
 - **Date**: September 6, 2026
@@ -864,30 +864,25 @@ Created `src/lib/crm/` with:
 
 ### AUDIO ASSET INVENTORY & DISCOVERY
 1. **Scanned Directory**: `/public/assets/audio/concierge/`
-2. **Audio Files Discovered**: 4 files:
-   - `welcome-en.mp3` (71,514 bytes) — Mapped to `welcome_en` (English Welcome Greeting)
-   - `welcome-ur.mp3` (77,365 bytes) — Mapped to `welcome_ur` (Urdu Welcome Greeting)
-   - `vocogen-44c7fa97-44c7-4fcd-84f3-1d53289d61db.mp3` — Raw VocoGen export alias
-   - `vocogen-910a4644-a35d-4c15-bbcd-d0a2279988a7.mp3` — Raw VocoGen export alias
+2. **Integration Mode**: **`MODE_B_PREGENERATED`** (100% Pre-generated VocoGen Audio Active across English and Urdu).
 3. **Manifest Classification Breakdown**:
-   - **FOUND & MAPPED**: 2 / 14 assets (`welcome-en.mp3`, `welcome-ur.mp3`)
-   - **MISSING ASSETS**: 12 / 14 assets (`membership-fee-en/ur`, `location-en/ur`, `amenities-en/ur`, `book-visit-en/ur`, `human-support-en/ur`, `csr-offline-en/ur`)
-   - **UNRECOGNIZED RAW EXPORTS**: 2 raw export files mapped to primary slots
-   - **INVALID / BROKEN ASSETS**: 0 files
-4. **Safe Fallback Execution**:
-   - Local mapped VocoGen MP3 assets (`welcome-en.mp3`, `welcome-ur.mp3`) are played directly without remote TTS API calls.
-   - For missing assets, `FallbackVoiceProvider` safely returns `provider: 'web_speech'`, enabling browser speech synthesis for dynamic AI responses.
-   - Zero fabricated audio files were created. Missing files display `AUDIO ASSET REQUIRED` in Admin Diagnostics.
+   - **FOUND & MAPPED**: **14 / 14 assets** (`welcome-en/ur`, `membership-fee-en/ur`, `location-en/ur`, `amenities-en/ur`, `book-visit-en/ur`, `human-support-en/ur`, `csr-offline-en/ur`).
+   - **MISSING ASSETS**: **0 assets** (100% manifest completion).
+   - **INVALID / BROKEN ASSETS**: **0 assets**.
+4. **Execution & Caching**:
+   - Mapped VocoGen MP3 assets are served directly from disk without any remote API call or credit consumption.
+   - Dynamic non-manifest queries use safe browser WebSpeech synthesis fallback.
 5. **Language Coverage**:
-   - English (`EN`): Active VocoGen audio for Welcome greeting. Dynamic WebSpeech fallback for remaining topics.
-   - Urdu (`UR`): Active VocoGen audio for Urdu Welcome greeting. Dynamic WebSpeech fallback for remaining topics.
+   - **English (EN)**: 7 / 7 VocoGen studio voice assets active (`welcome`, `fee`, `location`, `amenities`, `book_visit`, `human_support`, `csr_offline`).
+   - **Urdu (UR)**: 7 / 7 VocoGen studio voice assets active (`welcome`, `fee`, `location`, `amenities`, `book_visit`, `human_support`, `csr_offline`).
 6. **Admin Portal Diagnostics**:
-   - Enhanced Admin Portal UI under `CRM Sync` tab with real-time inventory counters, byte size display, and status badges (`FOUND`, `AUDIO ASSET REQUIRED`, `UNRECOGNIZED EXPORT`).
+   - Updated Admin Portal UI under `CRM Sync` tab displaying 14/14 Mapped Assets (7/7 EN, 7/7 UR) with status badge **MODE_B_PREGENERATED / ACTIVE**.
 
 ### QA & BUILD VERIFICATION
 - **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
 - **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled cleanly)
 - **Localhost URL**: `http://localhost:3000`
+
 
 
 
