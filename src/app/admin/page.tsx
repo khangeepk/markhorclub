@@ -653,17 +653,70 @@ export default function AdminPortalPage() {
         {/* TAB 11: CRM SYNC */}
         {activeTab === 'crm' && (
           <div className="space-y-6">
-            <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/30 flex items-center justify-between">
+            <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-serif font-semibold text-[#F4F0E8]">GuaranteedCRM Connection Status</h3>
-                <p className="text-xs text-[#C7A15A] mt-1 font-mono">Location ID: XiafrvXc2uTJ0WzOAJFu</p>
+                <h3 className="text-sm font-serif font-semibold text-[#F4F0E8]">GuaranteedCRM Connection & Pipeline Status</h3>
+                <p className="text-xs text-[#C7A15A] mt-1 font-mono">Location ID: XiafrvXc2uTJ0WzOAJFu • Pipeline: MARKHOR MEMBERSHIP (ID: lcc4CjRV3ENHhd68kvn0)</p>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider">
-                CONNECTED & ACTIVE
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider self-start md:self-auto">
+                LIVE & SYNCED
               </span>
             </div>
 
+            {/* Stage Mapping Overview Grid */}
+            <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#C7A15A] mb-3">Live Discovered Pipeline Stages (8 Stages)</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                {['01 New Inquiry', '02 Contacted', '03 Qualified', '04 Visit Scheduled', '05 Application Submitted', '06 Payment Pending', '07 Member', '08 Closed / Lost'].map((stage, idx) => (
+                  <div key={stage} className="p-2.5 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                    <span className="text-[#F4F0E8]/80 text-[11px]">{stage}</span>
+                    <span className="text-[10px] text-[#C7A15A] font-bold">Stage {idx + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Record Mapping Table */}
             <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
+              <div className="p-4 bg-[#071116] border-b border-[#C7A15A]/20 flex justify-between items-center">
+                <h4 className="text-xs font-serif font-semibold text-[#F4F0E8]">CRM Record Identifiers Mapping</h4>
+                <span className="text-[10px] uppercase text-[#C7A15A]">Local DB ↔ GuaranteedCRM</span>
+              </div>
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
+                    <th className="p-4">Reference</th>
+                    <th className="p-4">Applicant / Member</th>
+                    <th className="p-4">CRM Contact ID</th>
+                    <th className="p-4">CRM Opportunity ID</th>
+                    <th className="p-4">Sync Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#C7A15A]/10">
+                  {data?.inquiries?.map((inq: any) => (
+                    <tr key={inq.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 font-mono text-[#D6B978]">{inq.referenceNumber}</td>
+                      <td className="p-4 font-semibold text-[#F4F0E8]">{inq.fullName}</td>
+                      <td className="p-4 font-mono text-[11px] text-[#C7A15A]">{inq.crmContactId || 'Pending'}</td>
+                      <td className="p-4 font-mono text-[11px] text-[#C7A15A]">{inq.crmOpportunityId || 'Pending'}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${
+                          inq.crmSyncStatus === 'synced' ? 'bg-emerald-950 text-emerald-400' : 'bg-amber-950 text-amber-400'
+                        }`}>
+                          {inq.crmSyncStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Sync Queue Jobs */}
+            <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
+              <div className="p-4 bg-[#071116] border-b border-[#C7A15A]/20">
+                <h4 className="text-xs font-serif font-semibold text-[#F4F0E8]">Background Sync Queue & Retry Jobs</h4>
+              </div>
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
@@ -688,6 +741,11 @@ export default function AdminPortalPage() {
                       <td className="p-4">{new Date(job.createdAt).toLocaleString()}</td>
                     </tr>
                   ))}
+                  {(!data?.syncJobs || data.syncJobs.length === 0) && (
+                    <tr>
+                      <td colSpan={5} className="p-4 text-center text-[#F4F0E8]/40">No pending retry jobs. All records synced.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

@@ -332,6 +332,21 @@ export class GuaranteedCrmClient {
     throw new Error(`Failed to create opportunity in GuaranteedCRM: ${createRes.error}`)
   }
 
+  async updateLeadStage(opportunityId: string, stageId: string, _idempotencyKey?: string): Promise<{ success: boolean; error?: string }> {
+    const res = await this.request(`/opportunities/${opportunityId}/status`, {
+      method: 'PUT',
+      body: { pipelineStageId: stageId },
+    })
+    if (!res.success) {
+      const fallbackRes = await this.request(`/opportunities/${opportunityId}`, {
+        method: 'PUT',
+        body: { pipelineStageId: stageId },
+      })
+      return { success: fallbackRes.success, error: fallbackRes.error }
+    }
+    return { success: res.success, error: res.error }
+  }
+
   // ==================== TAGS API ====================
 
   async addTag(contactId: string, tags: string[]): Promise<boolean> {

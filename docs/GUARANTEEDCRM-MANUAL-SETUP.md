@@ -1,114 +1,80 @@
-# GUARANTEEDCRM — MANUAL SETUP GUIDE & EXTERNAL BLOCKERS
+# GUARANTEEDCRM — MANUAL SETUP GUIDE & UNRESOLVED BLOCKERS
 
-This document details the exact manual steps required in GuaranteedCRM for features that require UI configuration or administrator scope.
+This document details the exact manual steps required in GuaranteedCRM for features that require UI configuration, account billing, or user assignment.
 
 ---
 
-## 1. MARKHOR MEMBERSHIP PIPELINE SETUP
+## 1. WHATSAPP BUSINESS ACTIVATION & E164 NUMBER
+
+### STATUS
+MANUAL SETUP REQUIRED — PENDING EXTERNAL ACTIVATION
 
 ### WHAT IS MISSING
-The Private Integration API token has read access to Opportunities & Pipelines, but lacks full administrative scope to programmatically create new pipelines (`POST /opportunities/pipelines` returned `401 Unauthorized for scope`).
+Automated WhatsApp alert delivery requires connecting a paid WhatsApp Business Account (WABA) or LC Phone channel inside GuaranteedCRM.
 
 ### WHY IT IS REQUIRED
-To organize incoming Markhor Club membership inquiries, qualify leads, schedule visits, track applications, pending payments, and converted members.
+To deliver automated WhatsApp alerts to `+923305230888` (Admin) and automated WhatsApp notifications to applicants.
 
 ### WHERE TO CLICK
 1. Log in to GuaranteedCRM / GoHighLevel dashboard.
-2. Ensure you are in the **Markhor Club** Location (`XiafrvXc2uTJ0WzOAJFu`).
-3. Click **CRM Settings** (bottom left gear icon) → **Pipelines**.
-4. Click the **+ Create new pipeline** button in the top right.
+2. Select Location **Markhor Club** (`XiafrvXc2uTJ0WzOAJFu`).
+3. Click **Settings** (gear icon) → **Phone Numbers** (or **Conversations Providers**).
+4. Click the **WhatsApp** tab.
 
-### WHAT VALUE IS REQUIRED / WHAT TO CREATE
-- **Pipeline Name**: `MARKHOR MEMBERSHIP`
-- **Stages**:
-  1. `01 New Inquiry`
-  2. `02 Contacted`
-  3. `03 Qualified`
-  4. `04 Visit Scheduled`
-  5. `05 Application Submitted`
-  6. `06 Payment Pending`
-  7. `07 Member`
-  8. `08 Closed / Lost`
-
-### HOW TO VERIFY SUCCESS
-Go to **Opportunities** in the main navigation menu. Select `MARKHOR MEMBERSHIP` from the pipeline dropdown. All 8 stages should appear sequentially from left to right.
-
----
-
-## 2. WHATSAPP BUSINESS ACTIVATION & E164 NUMBER
-
-### WHAT IS MISSING
-WhatsApp notification sending via GuaranteedCRM requires paid WhatsApp API / LC Phone / Twilio WhatsApp channel activation.
-
-### WHY IT IS REQUIRED
-To deliver instant admin alerts to `+923305230888` and automated member messaging via WhatsApp.
-
-### WHERE TO CLICK
-1. Go to **Settings** → **Phone Numbers** (or **Conversations Providers**).
-2. Click **WhatsApp** tab.
-
-### WHAT VALUE IS REQUIRED / WHAT TO CREATE
+### EXACT SETUP / WHAT VALUE IS REQUIRED
 Connect your WhatsApp Business Account (WABA) or register phone number `+923305230888`.
 
 ### HOW TO VERIFY SUCCESS
-Send a test WhatsApp message from the Conversations inbox to a test mobile number.
+Send a test message from the GuaranteedCRM Conversations inbox to a test mobile number.
 
 ---
 
-## 3. MARKHOR CALENDAR FOR "BOOK A VISIT"
+## 2. MARKHOR CLUB VISIT BOOKING CALENDAR
+
+### STATUS
+MANUAL SETUP REQUIRED — VISIT BOOKING CALENDAR
 
 ### WHAT IS MISSING
-Creating a new booking calendar programmatically requires calendar admin scope.
+Creating a booking calendar programmatically via API returned `400 No team member found` because calendar creation requires assigning at least one registered staff/team member ID in the CRM dashboard.
 
 ### WHY IT IS REQUIRED
-Allows visitors on the website to select available time slots to visit the 500 Kanal Khanpur Dam estate.
+Enables automatic online slot booking for guided 500 Kanal Khanpur Dam estate visits.
 
 ### WHERE TO CLICK
 1. Go to **Settings** → **Calendars**.
 2. Click **+ Create Calendar** → Select **Event Booking** or **Round Robin**.
 
-### WHAT VALUE IS REQUIRED / WHAT TO CREATE
+### EXACT SETUP / WHAT VALUE IS REQUIRED
 - **Calendar Name**: `Markhor Club Visit Booking`
 - **Description**: `Guided 500 Kanal Estate & Luxury Amenities Tour`
+- **Slot Duration**: `30 mins`
+- **Assigned Team Member**: Select your active staff account in Markhor Club.
 
 ### HOW TO VERIFY SUCCESS
-The calendar will have a unique Calendar ID available in the URL bar, which can be set in `.env.local` as `GUARANTEEDCRM_VISIT_CALENDAR_ID`.
+Copy the generated Calendar ID from the URL bar (e.g., `IbFim3K...`) and set it in `.env.local` as `GUARANTEEDCRM_VISIT_CALENDAR_ID`.
 
 ---
 
-## 4. GUARANTEEDCRM LIVE CHAT WIDGET
+## 3. GUARANTEEDCRM LIVE CHAT WIDGET
+
+### STATUS
+MANUAL SETUP REQUIRED — LIVE CHAT WIDGET
 
 ### WHAT IS MISSING
 Direct embed code or widget ID for GuaranteedCRM live chat inbox integration.
 
 ### WHY IT IS REQUIRED
-To connect website visitors directly to a Live CSR within the GuaranteedCRM Conversations inbox.
+Connects website visitors directly to a Live CSR in the GuaranteedCRM Conversations inbox.
 
 ### WHERE TO CLICK
 1. Go to **Sites** → **Chat Widget**.
-2. Enable chat widget and configure widget theme with Markhor Club colors (`#071116` midnight background, `#C7A15A` gold accents).
+2. Click **+ New Chat Widget**.
 
-### WHAT VALUE IS REQUIRED / WHAT TO CREATE
-Widget title: `Markhor VIP Concierge`. Set fallback routing to WhatsApp `+923305230888`.
-
-### HOW TO VERIFY SUCCESS
-Test sending a visitor chat message from the live website widget and verify it arrives in the GuaranteedCRM Conversations inbox.
-
----
-
-## 5. CUSTOM FIELDS CREATION (RECOMMENDED)
-
-### WHERE TO CLICK
-1. Go to **Settings** → **Custom Fields**.
-
-### WHAT VALUE IS REQUIRED / WHAT TO CREATE
-Add the following custom fields to Contacts:
-- `Markhor Member ID` (Single Line Text)
-- `Membership Number` (Single Line Text)
-- `Membership Status` (Dropdown: Inquiry, Qualified, Active Member, Suspended, Expired)
-- `Membership Fee Snapshot` (Monetary / Text, e.g. PKR 500,000)
-- `Fee Paid` (Monetary / Text)
-- `Outstanding Balance` (Monetary / Text)
+### EXACT SETUP / WHAT VALUE IS REQUIRED
+- **Widget Title**: `Markhor VIP Concierge`
+- **Primary Accent Color**: `#C7A15A`
+- **Background Surface**: `#071116`
+- **Fallback Contact Routing**: WhatsApp `+923305230888`
 
 ### HOW TO VERIFY SUCCESS
-View any contact details page and confirm custom fields appear under the Markhor section.
+Submit a message in the chat widget and verify it appears live in the GuaranteedCRM Conversations inbox.

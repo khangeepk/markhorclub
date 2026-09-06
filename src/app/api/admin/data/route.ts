@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyAdminSession } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { getMarkhorPipelineConfig } from '@/lib/crm/pipelines'
 
 export async function GET() {
   try {
@@ -97,6 +98,9 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
+    // 10. Discovered Pipeline Config
+    const pipelineConfig = await getMarkhorPipelineConfig().catch(() => null)
+
     return NextResponse.json({
       success: true,
       currentUser: session,
@@ -120,6 +124,7 @@ export async function GET() {
       notificationLogs,
       syncJobs,
       auditLogs,
+      pipelineConfig,
     })
   } catch (error: any) {
     return NextResponse.json(

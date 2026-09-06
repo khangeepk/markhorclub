@@ -1,5 +1,6 @@
 import { db } from '../db'
 import { crmClient } from '../crm/client'
+import { getStageIdForStatus } from '../crm/pipelines'
 
 export async function syncInquiryToCrm(inquiryId: string): Promise<{ success: boolean; contactId?: string; opportunityId?: string; error?: string }> {
   try {
@@ -20,8 +21,8 @@ export async function syncInquiryToCrm(inquiryId: string): Promise<{ success: bo
       return { success: false, error: 'CRM credentials unconfigured' }
     }
 
-    // 1. Contact Deduplication & Upsert
-    const nameParts = inquiry.fullName.split(' ')
+    // 1. Idempotency & Contact Deduplication Search
+    const nameParts = inquiry.fullName.trim().split(' ')
     const firstName = nameParts[0] || inquiry.fullName
     const lastName = nameParts.slice(1).join(' ') || ''
 
@@ -36,30 +37,21 @@ export async function syncInquiryToCrm(inquiryId: string): Promise<{ success: bo
 
     const contactId = contactResult.contactId
 
-    // 2. Opportunity Creation in MARKHOR MEMBERSHIP pipeline
+    // 2. Opportunity Creation in MARKHOR MEMBERSHIP pipeline & appropriate stage
     let opportunityId: string | undefined = undefined
     try {
-      const pipelines = await crmClient.getPipelines()
-      const markhorPipeline = pipelines.find((p: any) =>
-        p.name?.toLowerCase().includes('markhor') || p.name?.toLowerCase().includes('membership')
-      ) || pipelines[0]
+      const stageConfig = await getStageIdForStatus(inquiry.status || '01 New Inquiry')
 
-      if (markhorPipeline) {
-        const stage = markhorPipeline.stages?.find((s: any) =>
-          s.name?.toLowerCase().includes('inquiry') || s.name?.toLowerCase().includes('01')
-        ) || markhorPipeline.stages?.[0]
-
-        if (stage) {
-          const opResult = await crmClient.upsertOpportunity({
-            pipelineId: markhorPipeline.id,
-            stageId: stage.id,
-            name: `Membership Inquiry — ${inquiry.fullName} (${inquiry.referenceNumber})`,
-            contactId: contactId,
-            monetaryValue: inquiry.membershipFeeSnapshotPkr || 500000,
-            status: 'open',
-          })
-          opportunityId = opResult.opportunityId
-        }
+      if (stageConfig) {
+        const opResult = await crmClient.upsertOpportunity({
+          pipelineId: stageConfig.pipelineId,
+          stageId: stageConfig.stageId,
+          name: `Membership Inquiry — ${inquiry.fullName} (${inquiry.referenceNumber})`,
+          contactId: contactId,
+          monetaryValue: inquiry.membershipFeeSnapshotPkr || 500000,
+          status: 'open',
+        })
+        opportunityId = opResult.opportunityId
       }
     } catch (opErr: any) {
       console.warn('CRM Opportunity creation warning (contact saved):', opErr?.message)
@@ -114,5 +106,21 @@ export async function syncInquiryToCrm(inquiryId: string): Promise<{ success: bo
     }).catch(() => {})
 
     return { success: false, error: errorMessage }
+  }
+}
+
+export async function updateCrmOpportunityStage(
+  opportunityId: string,
+  newStatus: string
+): Promise<boolean> {
+  try {
+    const stageConfig = await getStageIdForStatus(newStatus)
+    if (!stageConfig || !opportunityId) return false
+
+    const res = await crmClient.updateLeadStage(opportunityId, stageConfig.stageId, `status_change_${Date.now()}`)
+    return res.success
+  } catch (err: any) {
+    console.warn('Failed to update CRM opportunity stage:', err?.message)
+    return false
   }
 }
