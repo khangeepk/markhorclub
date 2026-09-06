@@ -914,6 +914,40 @@ Created `src/lib/crm/` with:
 - **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled cleanly)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-PROD-10 — PRODUCTION READINESS, STAGING & GO-LIVE
+
+- **Status**: COMPLETE
+- **Completion Date**: September 6, 2026
+
+### 1. Key Accomplishments & Hardening
+- **Security & Rate Limiting**:
+  - Updated `.gitignore` to strictly exclude local database files (`dev.db`, `dev.db-journal`, `backups/`, `*.sqlite`).
+  - Implemented IP-based brute-force rate limiting on `/api/admin/login` (max 5 failed attempts per 15 minutes per IP).
+- **SEO & Indexing Security**:
+  - Created dynamic `src/app/robots.ts` disallowing `/admin/` and `/api/` from search engine crawlers.
+  - Created dynamic `src/app/sitemap.ts` exposing only public luxury landing sections (`/`, `/#membership`, `/#experience`, `/#visit`, `/#faq`).
+- **Telemetry Adapters**:
+  - Created `src/lib/analytics.ts` for privacy-conscious business event tracking with automatic PII redaction.
+  - Created `src/lib/monitoring.ts` for production error capture with PII and secret scrubbing.
+- **Operational Documentation**:
+  - `docs/BACKUP-RESTORE.md`: Documented managed PostgreSQL PITR, `pg_dump` CLI commands, SQLite emergency fallback, and restoration workflows.
+  - `docs/DEPLOYMENT.md`: Complete staging and production deployment guide including Node.js requirements, environment variables schema, and GuaranteedCRM webhook setup.
+  - `docs/GO-LIVE-CHECKLIST.md`: 20-category verification checklist covering database, security, backup, CRM, communications, search indexing, and mobile readiness.
+
+### 2. Final System Status Summary
+- **Public Website**: PASS (Cinematic Intro, Stitch UI, Lenis/GSAP animations, ambient music)
+- **Production Build**: PASS (24/24 routes compiled successfully, `npx tsc --noEmit` 0 errors)
+- **Database**: DEV (SQLite local) / PRODUCTION READY (PostgreSQL via Prisma `DATABASE_URL`)
+- **Admin Security**: PASS (HTTP-only cookies, bcrypt hashing, per-IP login rate limiting)
+- **GuaranteedCRM**: PASS (Authentication, Location Access, `MARKHOR MEMBERSHIP` 8 stages verified)
+- **Communications**: WhatsApp (ACTIVE floating CTA), Email (PENDING SMTP credentials), Calendar (MANUAL CONFIG)
+- **Voice & Music**: VocoGen 15 MP3 pre-rendered audio working, Ambient background music ducking on speech
+- **SEO & Indexing**: PASS (`robots.ts` & `sitemap.ts` configured)
+- **Localhost URL**: `http://localhost:3000`
+
+
 
 
 

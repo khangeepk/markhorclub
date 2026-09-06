@@ -11,3 +11,8 @@ build/
 *.log
 *.tsbuildinfo
 
+# SQLite Database & Backups
+dev.db
+dev.db-journal
+backups/
+*.sqlite

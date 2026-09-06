@@ -2,8 +2,39 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createSessionToken, setSessionCookie, verifyPassword } from '@/lib/auth'
 
+// In-memory rate limiting map for admin login (IP/key -> { count, resetAt })
+const loginAttempts = new Map<string, { count: number; resetAt: number }>()
+const MAX_FAILED_ATTEMPTS = 5
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
+
+function getClientIp(request: Request): string {
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0].trim()
+  return request.headers.get('x-real-ip') || '127.0.0.1'
+}
+
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request)
+    const now = Date.now()
+
+    // Check rate limit status for IP
+    const record = loginAttempts.get(ip)
+    if (record) {
+      if (now > record.resetAt) {
+        loginAttempts.delete(ip)
+      } else if (record.count >= MAX_FAILED_ATTEMPTS) {
+        const remainingSecs = Math.ceil((record.resetAt - now) / 1000)
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Too many failed login attempts. Please try again in ${remainingSecs} seconds.`,
+          },
+          { status: 429 }
+        )
+      }
+    }
+
     const { username, password } = await request.json()
 
     if (!username || !password) {
@@ -17,7 +48,17 @@ export async function POST(request: Request) {
       where: { username: username.trim() },
     })
 
+    function recordFailure() {
+      const cur = loginAttempts.get(ip)
+      if (cur) {
+        cur.count += 1
+      } else {
+        loginAttempts.set(ip, { count: 1, resetAt: Date.now() + LOCKOUT_WINDOW_MS })
+      }
+    }
+
     if (!user || !user.isActive) {
+      recordFailure()
       // Record failed attempt audit
       await db.auditLog.create({
         data: {
@@ -37,6 +78,7 @@ export async function POST(request: Request) {
     const isValid = await verifyPassword(password, user.passwordHash)
 
     if (!isValid) {
+      recordFailure()
       await db.auditLog.create({
         data: {
           actorUsername: username,
@@ -51,6 +93,9 @@ export async function POST(request: Request) {
         { status: 401 }
       )
     }
+
+    // Success -> Clear failed attempts for IP
+    loginAttempts.delete(ip)
 
     // Update last login
     await db.adminUser.update({
