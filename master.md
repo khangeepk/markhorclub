@@ -784,6 +784,40 @@ Created `src/lib/crm/` with:
 - **AI QA & Intent Tests**: PASS (FAQ matching, Book a Visit intent, Live CSR intent, anti-hallucination guardrail, and Lead Capture verified)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-VOICE-05 — VOCOGEN VOICE CONCIERGE READINESS
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform`
+
+### VOICE ARCHITECTURE & VOCOGEN INTEGRATION
+1. **Server-Side Voice Abstraction**: Built `src/lib/voice/` (`types.ts`, `vocogen.ts`, `fallback.ts`, `provider.ts`) isolating all TTS synthesis behind a clean `VoiceProvider` interface.
+2. **Integration Mode Selection**:
+   - Default Mode: `MODE_C_MANUAL_CACHE` (Pre-generated static audio assets + browser speech synthesis fallback).
+   - Automated REST API Mode: `MODE_B_ASYNC_TTS` ready (activates automatically once `VOCOGEN_API_KEY` environment variable is set).
+3. **Listen Button UI**: Added explicit **Listen** button on Markhor Concierge chatbot responses in `FaqChatbot.tsx`. Audio synthesizes or plays ONLY when clicked (never auto-plays, protecting voice credits).
+4. **Normalized Audio Caching**: Implemented in-memory MD5 text hash caching (`FallbackVoiceProvider.getCacheKey`) and pre-generated static audio asset mapping (`/assets/audio/concierge/`).
+5. **Language Strategy**: Added explicit language toggle (`EN` English / `UR` Urdu) in the Concierge modal header.
+6. **Microphone Voice Input**: Added dictation microphone button (`Mic`) in `FaqChatbot.tsx` utilizing browser Web Speech recognition.
+7. **Credit & Cost Protection Safeguards**:
+   - Text prompt capped at max **500 characters** per request.
+   - Rate limiting enforced on POST `/api/voice/synthesize` (**10 requests per 10 minutes** per IP).
+   - Zero client-side API secrets.
+8. **Live CSR Handoff**: Voice interaction seamlessly supports Live CSR handoff trigger with WhatsApp escalation and offline callback logging.
+
+### UNRESOLVED MANUAL ACTIONS (Documented in `docs/VOCOGEN-INTEGRATION.md`)
+1. **VocoGen Pre-Generated Audio Assets**: Generate audio for key FAQ responses in VocoGen UI and save to `/public/assets/audio/concierge/`.
+2. **VocoGen API Key (Optional for Automated Mode B)**: Generate API key in VocoGen dashboard and add `VOCOGEN_API_KEY="your_api_key"` to `.env.local`.
+
+### QA & BUILD VERIFICATION
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
+- **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled)
+- **Voice API QA**: PASS (`POST /api/voice/synthesize` returned `MODE_C_MANUAL_CACHE` with audio asset URL)
+- **Localhost URL**: `http://localhost:3000`
+
+
 
 
 

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { MessageSquare, X, Send, Bot, User, PhoneCall, Sparkles, Calendar, CheckCircle2 } from 'lucide-react'
+import { MessageSquare, X, Send, Bot, User, PhoneCall, Sparkles, Calendar, CheckCircle2, Volume2, VolumeX, Mic, Globe } from 'lucide-react'
 
 interface Message {
   id: string
@@ -16,6 +16,12 @@ export const FaqChatbot: React.FC = () => {
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [showOfflineModal, setShowOfflineModal] = useState(false)
+  const [language, setLanguage] = useState<'en' | 'ur'>('en')
+
+  // Voice playback & recording state
+  const [playingMsgId, setPlayingMsgId] = useState<string | null>(null)
+  const [isListeningMic, setIsListeningMic] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // Offline message form state
   const [offlineForm, setOfflineForm] = useState({ fullName: '', phone: '', email: '', message: '' })
@@ -42,7 +48,7 @@ export const FaqChatbot: React.FC = () => {
       const script = document.createElement('script')
       script.src = gcrmWidgetSrc
       script.async = true
-      script.setAttribute('data-widget-id', gcrmWidgetId)
+      script.setAttribute('data-[#071116]', gcrmWidgetId)
       document.body.appendChild(script)
 
       return () => {
@@ -106,6 +112,100 @@ export const FaqChatbot: React.FC = () => {
       ])
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Voice TTS Playback Handler (Listen Button)
+  const handleListen = async (msg: Message) => {
+    if (playingMsgId === msg.id) {
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel()
+      }
+      setPlayingMsgId(null)
+      return
+    }
+
+    setPlayingMsgId(msg.id)
+
+    try {
+      const res = await fetch('/api/voice/synthesize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: msg.text, language }),
+      })
+
+      if (res.headers.get('content-type')?.includes('audio/mpeg')) {
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audioRef.current = audio
+        audio.onended = () => setPlayingMsgId(null)
+        audio.play()
+        return
+      }
+
+      const data = await res.json()
+      if (data.success && data.audioUrl) {
+        const audio = new Audio(data.audioUrl)
+        audioRef.current = audio
+        audio.onended = () => setPlayingMsgId(null)
+        audio.play()
+        return
+      }
+
+      // Browser Web Speech Fallback if server returned web_speech or no audio file
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(msg.text)
+        utterance.lang = language === 'ur' ? 'ur-PK' : 'en-US'
+        utterance.onend = () => setPlayingMsgId(null)
+        utterance.onerror = () => setPlayingMsgId(null)
+        window.speechSynthesis.speak(utterance)
+      } else {
+        setPlayingMsgId(null)
+      }
+    } catch (err) {
+      console.warn('Voice playback failed:', err)
+      setPlayingMsgId(null)
+    }
+  }
+
+  // Mic Speech Recognition Handler
+  const handleMicClick = () => {
+    if (typeof window === 'undefined') return
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser. Please type your message.')
+      return
+    }
+
+    if (isListeningMic) {
+      setIsListeningMic(false)
+      return
+    }
+
+    try {
+      const recognition = new SpeechRecognition()
+      recognition.lang = language === 'ur' ? 'ur-PK' : 'en-US'
+      recognition.interimResults = false
+
+      recognition.onstart = () => setIsListeningMic(true)
+      recognition.onend = () => setIsListeningMic(false)
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript
+        if (transcript) {
+          setInputMessage(transcript)
+        }
+      }
+
+      recognition.start()
+    } catch {
+      setIsListeningMic(false)
     }
   }
 
@@ -174,28 +274,39 @@ export const FaqChatbot: React.FC = () => {
 
       {/* Main Luxury Concierge Modal */}
       {isOpen && (
-        <div className="fixed bottom-24 left-6 z-50 w-[92vw] sm:w-[380px] h-[540px] rounded-2xl bg-[#071116] border border-[#C7A15A]/40 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-24 left-6 z-50 w-[92vw] sm:w-[390px] h-[550px] rounded-2xl bg-[#071116] border border-[#C7A15A]/40 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 bg-[#0B1C26] border-b border-[#C7A15A]/20">
+          <div className="flex items-center justify-between px-5 py-3.5 bg-[#0B1C26] border-b border-[#C7A15A]/20">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#C7A15A]/20 border border-[#C7A15A]/50 text-[#C7A15A]">
                 <Sparkles className="w-4 h-4 animate-pulse" />
               </div>
               <div>
                 <h3 className="text-sm font-serif font-medium text-[#F4F0E8] tracking-wide">Markhor Club Concierge</h3>
-                <p className="text-[10px] tracking-wider text-[#C7A15A] uppercase">AI Powered • Verified Knowledge Base</p>
+                <p className="text-[10px] tracking-wider text-[#C7A15A] uppercase">AI Powered • Voice Ready</p>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 rounded-full text-[#F4F0E8]/70 hover:text-[#F4F0E8] hover:bg-white/10 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Language Selector */}
+              <button
+                onClick={() => setLanguage((prev) => (prev === 'en' ? 'ur' : 'en'))}
+                title="Toggle Voice Language (EN / UR)"
+                className="px-2 py-1 rounded-lg bg-[#071116] border border-[#C7A15A]/30 text-[10px] font-bold tracking-wider text-[#C7A15A] hover:border-[#C7A15A] transition flex items-center gap-1"
+              >
+                <Globe className="w-3 h-3" />
+                <span>{language.toUpperCase()}</span>
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 rounded-full text-[#F4F0E8]/70 hover:text-[#F4F0E8] hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Quick Action Pills */}
-          <div className="px-4 py-2.5 bg-[#071116] border-b border-[#C7A15A]/10 flex gap-2 overflow-x-auto no-scrollbar scrollbar-none">
+          <div className="px-4 py-2 bg-[#071116] border-b border-[#C7A15A]/10 flex gap-2 overflow-x-auto no-scrollbar scrollbar-none">
             {quickActions.map((act) => (
               <button
                 key={act}
@@ -245,13 +356,36 @@ export const FaqChatbot: React.FC = () => {
                     </a>
                   )}
 
-                  <span
-                    className={`block text-[9px] mt-1 text-right ${
-                      msg.sender === 'user' ? 'text-[#071116]/70' : 'text-[#F4F0E8]/40'
-                    }`}
-                  >
-                    {msg.time}
-                  </span>
+                  <div className="flex items-center justify-between mt-1.5 pt-1 border-t border-white/5">
+                    {/* Listen Button for Voice Output */}
+                    {msg.sender === 'bot' ? (
+                      <button
+                        onClick={() => handleListen(msg)}
+                        className="inline-flex items-center gap-1 text-[10px] font-medium text-[#C7A15A] hover:text-[#D6B978] transition"
+                        title="Listen to voice synthesis"
+                      >
+                        {playingMsgId === msg.id ? (
+                          <>
+                            <VolumeX className="w-3 h-3 text-rose-400 animate-pulse" />
+                            <span className="text-rose-400">Stop</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3 h-3" />
+                            <span>Listen</span>
+                          </>
+                        )}
+                      </button>
+                    ) : <span />}
+
+                    <span
+                      className={`block text-[9px] ${
+                        msg.sender === 'user' ? 'text-[#071116]/70' : 'text-[#F4F0E8]/40'
+                      }`}
+                    >
+                      {msg.time}
+                    </span>
+                  </div>
                 </div>
                 {msg.sender === 'user' && (
                   <div className="w-7 h-7 rounded-full bg-[#C7A15A] flex items-center justify-center text-[#071116] shrink-0 mt-1">
@@ -288,11 +422,25 @@ export const FaqChatbot: React.FC = () => {
             }}
             className="p-3 bg-[#0B1C26] border-t border-[#C7A15A]/20 flex items-center gap-2"
           >
+            {/* Microphone Dictation Button */}
+            <button
+              type="button"
+              onClick={handleMicClick}
+              title="Dictate with voice"
+              className={`p-2 rounded-xl border transition-colors ${
+                isListeningMic
+                  ? 'bg-rose-950 border-rose-500 text-rose-400 animate-pulse'
+                  : 'bg-[#071116] border-[#C7A15A]/30 text-[#C7A15A] hover:border-[#C7A15A]'
+              }`}
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+
             <input
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask about membership, fee, location..."
+              placeholder={isListeningMic ? 'Listening...' : 'Ask about membership, fee, location...'}
               className="flex-1 bg-[#071116] border border-[#C7A15A]/30 rounded-xl px-3.5 py-2 text-xs text-[#F4F0E8] placeholder-[#F4F0E8]/40 focus:outline-none focus:border-[#C7A15A]"
             />
             <button
