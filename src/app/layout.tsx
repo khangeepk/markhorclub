@@ -4,6 +4,8 @@ import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 import SmoothScrollProvider from '../components/common/SmoothScrollProvider'
 import CinematicIntroProvider from '../components/common/CinematicIntro'
+import { WhatsAppButton } from '../components/common/WhatsAppButton'
+import { FaqChatbot } from '../components/common/FaqChatbot'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -57,6 +59,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Header />
             <main className="flex-1 w-full">{children}</main>
             <Footer />
+            <WhatsAppButton />
+            <FaqChatbot />
           </SmoothScrollProvider>
         </CinematicIntroProvider>
       </body>

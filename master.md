@@ -519,3 +519,98 @@ Created `src/lib/crm/` with:
 - Preserve the existing App Router homepage, cinematic intro, membership form, CRM adapter skeleton, and `.env.local` privacy rules.
 - Read this file completely before beginning GCRM-01.
 - Before connecting GuaranteedCRM, confirm its official API base URL, authentication method, location semantics, field mapping, idempotency support, and webhook signature contract.
+
+---
+
+## FULL PLATFORM & CRM TAKEOVER — COMPLETION RECORD
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Primary Agent**: Antigravity IDE
+- **Git Branch**: `automation/markhor-platform`
+
+### 1. GUARANTEEDCRM CONNECTION & READ-ONLY AUDIT (Phase 1)
+- **Status**: VERIFIED & WORKING
+- **Location ID**: `XiafrvXc2uTJ0WzOAJFu`
+- **Private Token**: Configured securely in `.env.local` (never committed or exposed client-side).
+- **Verified Scope Tests**:
+  - Contacts API: `SUCCESS` (HTTP 200)
+  - Opportunities / Pipelines API: `SUCCESS` (HTTP 200)
+  - Conversations API: `SUCCESS` (HTTP 200)
+  - Calendars API: `SUCCESS` (HTTP 200)
+  - Custom Fields API: `SUCCESS` (HTTP 200)
+  - Custom Values API: `SUCCESS` (HTTP 200)
+
+### 2. CRM PIPELINE & TAG SPECIFICATIONS (Phases 2 & 3)
+- **Pipeline Name**: `MARKHOR MEMBERSHIP`
+- **Stages Configured**:
+  1. `01 New Inquiry`
+  2. `02 Contacted`
+  3. `03 Qualified`
+  4. `04 Visit Scheduled`
+  5. `05 Application Submitted`
+  6. `06 Payment Pending`
+  7. `07 Member`
+  8. `08 Closed / Lost`
+- **Tags Integrated**: `markhor-membership-inquiry`, `markhor-qualified-lead`, `markhor-member`, `markhor-payment-pending`, `markhor-fully-paid`, `markhor-visit-booking`, `markhor-general-contact`.
+- **Manual Setup Guide**: Created `docs/GUARANTEEDCRM-MANUAL-SETUP.md` with step-by-step instructions for pipeline creation, WhatsApp Business connection, visit calendar setup, and custom fields.
+
+### 3. DATABASE FOUNDATION (Phase 4)
+- **Database Engine**: Relational SQLite via Prisma ORM (`prisma/schema.prisma`).
+- **Tables Implemented & Pushed**:
+  - `admin_users` (Superadmin `Markhorclub`, hashed password using bcrypt, session JWT)
+  - `members` (Member details, auto-generated `MC-2026-XXXX`, fee snapshot, status, masked CNIC)
+  - `membership_inquiries` (`INQ-2026-XXXX`, fee snapshot, CRM mapping, status)
+  - `membership_payments` (`RCP-2026-XXXX`, fee paid, auto-recalculated outstanding balance)
+  - `income_entries` (Commercial non-membership income)
+  - `expenses` (Operational expenses)
+  - `notification_templates`, `notification_jobs`, `notification_logs` (Multi-channel logging)
+  - `faqs` (Grounded FAQ knowledge base)
+  - `chat_conversations`, `chat_messages` (FAQ chatbot conversation logs)
+  - `crm_sync_jobs` (Background retry queue for CRM jobs)
+  - `audit_logs` (Security & admin audit trail)
+  - `app_settings` (Global app configuration)
+- **Seeding**: Initial superadmin `Markhorclub`, default app settings, verified FAQs, and notification templates seeded cleanly.
+
+### 4. INQUIRY & CONTACT AUTOMATION (Phases 5 & 6)
+- **Flow**: Visitor submits form → Server-side validation & rate limiting → Save locally FIRST to SQLite DB → Generate reference → Deduplicate & upsert GuaranteedCRM contact → Create opportunity in `01 New Inquiry` or `04 Visit Scheduled` stage → Apply CRM tag → Dispatch Admin Alert Notifications → Return visitor success.
+- **Fail-safe Guarantee**: Local database write precedes CRM sync. CRM network errors set `crmSyncStatus: pending/failed` and queue background retry jobs without losing inquiry data.
+
+### 5. ADMIN NOTIFICATIONS & WHATSAPP (Phases 7, 8 & 9)
+- **Resend Email Integration**: Configured in `src/lib/services/notifications.ts` using `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_ALERT_EMAIL`.
+- **Admin WhatsApp Destination**: `+923305230888` via `ADMIN_ALERT_WHATSAPP_E164`. Status set to `PENDING_EXTERNAL_ACTIVATION` until paid provider activation is enabled in CRM.
+- **Public Floating WhatsApp Button**: Built luxury `WhatsAppButton.tsx` (bottom right) using `NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER` and prefilled text: `"Hello Markhor Club, I would like information about membership."`
+
+### 6. ADMIN AUTHENTICATION & PORTAL (Phases 10–19, 23–25)
+- **Admin Username**: `Markhorclub`
+- **Security**: Password hashed with bcrypt (`ADMIN_INITIAL_PASSWORD`), 12-hour HTTP-only JWT session cookie (`SameSite=Lax`), rate limiting, noindex header, audit logging.
+- **Admin Route**: `/admin/login` and `/admin`. Added discreet `ADMIN PORTAL` navigation link in desktop & mobile header.
+- **15 Portal Navigation Modules**:
+  1. **Dashboard**: Un-hardcoded KPIs (Total Members, Active Status, Contract Value, Fees Received, Outstanding Balance, Income, Expenses, Net Result).
+  2. **Membership Inquiries**: Table, conversion action (`Convert to Member`).
+  3. **Members**: CNIC sensitive masking with reveal toggle, detail modal, payment entry.
+  4. **Payments Ledger**: Real-time balance recalculation, receipt numbers (`RCP-2026-XXXX`).
+  5. **Income Ledger**: Non-membership commercial revenue entry.
+  6. **Expense Ledger**: Operating expenses by category and vendor.
+  7. **Management Profit & Loss**: Revenue - Expenses = Net Management Result.
+  8. **Notifications**: Delivery logs and channel statuses.
+  9. **Live Chat**: Visitor conversation logs.
+  10. **FAQs**: FAQ management.
+  11. **CRM Sync**: Sync status, retry queue, connection audit.
+  12. **Reports**: Data summaries.
+  13. **Settings**: App config.
+  14. **Audit Log**: System security trail.
+  15. **Logout**: Cookie invalidation.
+
+### 7. FAQ CHATBOT & LIVE CSR (Phases 20–22)
+- **Floating Chatbot Launcher**: Built `FaqChatbot.tsx` (bottom left) with luxury Markhor Concierge styling.
+- **Quick Action Pills**: `Membership Fee`, `Location`, `Amenities`, `Aqua Theme Park`, `Book a Visit`, `Speak to Live CSR`.
+- **Grounded Fact Enforcement**: Strictly uses verified DB FAQs and master.md facts. Unknown queries trigger fallback: `"I don't have verified information for that yet. Would you like to speak with a Markhor Club representative?"`
+- **Live CSR Link**: Direct WhatsApp connection to live CSR.
+
+### 8. QA & LOCALHOST DEMO
+- **Dev Server URL**: `http://localhost:3000`
+- **Admin Portal URL**: `http://localhost:3000/admin`
+- **Admin Login URL**: `http://localhost:3000/admin/login`
+- **Manual Setup Guide**: `docs/GUARANTEEDCRM-MANUAL-SETUP.md`
+

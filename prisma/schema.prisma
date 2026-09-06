@@ -1,0 +1,246 @@
+// Prisma schema for Markhor Club
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id            String    @id @default(uuid())
+  username      String    @unique
+  passwordHash  String
+  fullName      String
+  email         String
+  role          String    @default("admin") // admin, superadmin, finance, support
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
+model Member {
+  id                    String              @id @default(uuid())
+  membershipNumber      String              @unique // MC-2026-0001
+  fullName              String
+  phone                 String
+  email                 String
+  address               String?
+  nicCnic               String?             // Sensitive - masked in UI lists
+  membershipFeeSnapshot Float               @default(500000)
+  membershipStatus      String              @default("active") // active, suspended, cancelled, pending
+  remarks               String?
+  joinedAt              DateTime            @default(now())
+  crmContactId          String?
+  crmOpportunityId      String?
+  crmLastSyncedAt       DateTime?
+  crmSyncStatus         String              @default("pending") // pending, synced, failed
+  crmSyncError          String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  payments              MembershipPayment[]
+
+  @@map("members")
+}
+
+model MembershipInquiry {
+  id                      String    @id @default(uuid())
+  referenceNumber         String    @unique // INQ-2026-0001
+  fullName                String
+  email                   String
+  phone                   String
+  preferredContactMethod  String    @default("whatsapp")
+  membershipCategory      String    @default("individual")
+  message                 String?
+  status                  String    @default("new") // new, contacted, qualified, visit_scheduled, application_submitted, converted, closed
+  membershipFeeSnapshotPkr Float    @default(500000)
+  crmContactId            String?
+  crmOpportunityId        String?
+  crmSyncStatus           String    @default("pending") // pending, processing, synced, failed
+  crmSyncError            String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@map("membership_inquiries")
+}
+
+model MembershipPayment {
+  id             String   @id @default(uuid())
+  memberId       String
+  member         Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount         Float
+  paymentDate    DateTime @default(now())
+  paymentMethod  String   @default("bank_transfer") // bank_transfer, cash, cheque, card, online
+  reference      String?
+  receiptNumber  String   @unique // RCP-2026-0001
+  remarks        String?
+  createdBy      String   @default("system")
+  isReversed     Boolean  @default(false)
+  reversalReason String?
+  reversalDate   DateTime?
+  crmSyncStatus  String   @default("pending")
+  createdAt      DateTime @default(now())
+
+  @@map("membership_payments")
+}
+
+model IncomeEntry {
+  id            String   @id @default(uuid())
+  date          DateTime @default(now())
+  category      String   // Event, Rental, Dining, Sponsorship, Other
+  description   String
+  amount        Float
+  paymentMethod String   @default("bank_transfer")
+  reference     String?
+  remarks       String?
+  createdBy     String   @default("admin")
+  createdAt     DateTime @default(now())
+
+  @@map("income_entries")
+}
+
+model Expense {
+  id                String   @id @default(uuid())
+  date              DateTime @default(now())
+  category          String   // Utilities, Maintenance, Staff Salary, Marketing, Operations, Other
+  vendorPayee       String
+  description       String
+  amount            Float
+  paymentMethod     String   @default("bank_transfer")
+  reference         String?
+  remarks           String?
+  receiptAttachment String?
+  createdBy         String   @default("admin")
+  createdAt         DateTime @default(now())
+
+  @@map("expenses")
+}
+
+model NotificationTemplate {
+  id           String             @id @default(uuid())
+  name         String             @unique
+  subject      String
+  channel      String             @default("whatsapp") // whatsapp, email, both
+  bodyTemplate String
+  variables    String?            // JSON string of variable names
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  jobs         NotificationJob[]
+
+  @@map("notification_templates")
+}
+
+model NotificationJob {
+  id               String            @id @default(uuid())
+  templateId       String?
+  template         NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  recipientType    String            @default("single") // single, multiple, all_active, with_balance, leads
+  recipientFilters String?           // JSON string of filter parameters
+  channel          String            @default("whatsapp")
+  status           String            @default("queued") // queued, processing, completed, failed
+  scheduledAt      DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  logs             NotificationLog[]
+
+  @@map("notification_jobs")
+}
+
+model NotificationLog {
+  id                     String           @id @default(uuid())
+  jobId                  String?
+  job                    NotificationJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  recipientPhone         String?
+  recipientEmail         String?
+  channel                String
+  templateName           String?
+  messageContent         String
+  providerMessageId      String?
+  status                 String           @default("queued") // queued, sent, delivered, failed, pending_external_activation
+  failureReason          String?
+  sentAt                 DateTime?
+  createdAt              DateTime         @default(now())
+
+  @@map("notification_logs")
+}
+
+model FAQ {
+  id        String   @id @default(uuid())
+  category  String   @default("General") // Membership, Amenities, Location, Pricing, Aqua Park
+  question  String
+  answer    String
+  isEnabled Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+model ChatConversation {
+  id                 String        @id @default(uuid())
+  visitorName        String?
+  visitorEmail       String?
+  visitorPhone       String?
+  status             String        @default("active") // active, closed, transferred_to_csr
+  crmConversationId  String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  messages           ChatMessage[]
+
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(uuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderType     String           @default("visitor") // visitor, bot, csr
+  message        String
+  createdAt      DateTime         @default(now())
+
+  @@map("chat_messages")
+}
+
+model CrmSyncJob {
+  id          String   @id @default(uuid())
+  entityType  String   // inquiry, member, payment, contact
+  entityId    String
+  eventName   String
+  payload     String   // JSON string
+  status      String   @default("pending") // pending, processing, synced, failed, retrying
+  retryCount  Int      @default(0)
+  lastError   String?
+  syncedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("crm_sync_jobs")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorUsername String   @default("system")
+  action        String   // login, member_created, payment_added, expense_added, etc.
+  entityType    String   // AdminUser, Member, Payment, Income, Expense, FAQ, Settings
+  entityId      String?
+  details       String?  // JSON string
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model AppSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("app_settings")
+}

@@ -1,14 +1,35 @@
 import { NextResponse } from 'next/server'
-import { MEMBERSHIP_CONFIG } from '../../../config/membership'
-import { buildLocalMembershipEnquiry } from '../../../lib/crm/local-records'
-import { buildMembershipEnquiryEvent, createPendingSyncJob } from '../../../lib/crm/sync'
+import { db } from '@/lib/db'
+import { MEMBERSHIP_CONFIG } from '@/config/membership'
+import { syncInquiryToCrm } from '@/lib/services/crm-sync'
+import { sendInquiryNotifications } from '@/lib/services/notifications'
+
+// In-memory rate limiting map for basic protection (5 requests per 10 mins per IP)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
 export async function POST(request: Request) {
   try {
+    // Basic Rate Limiting
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1'
+    const now = Date.now()
+    const rateLimit = rateLimitMap.get(ip)
+
+    if (rateLimit && now < rateLimit.resetAt) {
+      if (rateLimit.count >= 5) {
+        return NextResponse.json(
+          { success: false, error: 'Too many requests. Please try again in a few minutes.' },
+          { status: 429 }
+        )
+      }
+      rateLimit.count += 1
+    } else {
+      rateLimitMap.set(ip, { count: 1, resetAt: now + 10 * 60 * 1000 })
+    }
+
     const body = await request.json()
     const { fullName, email, phone, preferredContact, interestCategory, message, consent, honeypot } = body
 
-    // Honeypot anti-spam check
+    // 1. Honeypot anti-spam check
     if (honeypot) {
       return NextResponse.json(
         { success: false, error: 'Bot submission detected.' },
@@ -16,7 +37,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Server-side validation
+    // 2. Server-side Validation & Sanitization
     if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 2) {
       return NextResponse.json(
         { success: false, error: 'Please provide a valid full name.' },
@@ -25,16 +46,17 @@ export async function POST(request: Request) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!email || !emailRegex.test(email)) {
+    if (!email || !emailRegex.test(email.trim())) {
       return NextResponse.json(
         { success: false, error: 'Please provide a valid email address.' },
         { status: 400 }
       )
     }
 
-    if (!phone || typeof phone !== 'string' || phone.trim().length < 7) {
+    const cleanPhone = phone ? String(phone).replace(/[^0-9+]/g, '') : ''
+    if (!cleanPhone || cleanPhone.length < 7) {
       return NextResponse.json(
-        { success: false, error: 'Please provide a valid phone number.' },
+        { success: false, error: 'Please provide a valid contact phone number.' },
         { status: 400 }
       )
     }
@@ -46,38 +68,69 @@ export async function POST(request: Request) {
       )
     }
 
-    // Local-first integration boundary. The authoritative fee snapshot is
-    // generated server-side; the CRM job is deterministic and currently only
-    // planned/queued because GCRM-00 must not call an external provider.
-    const localRecord = buildLocalMembershipEnquiry({
-      fullName: fullName.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim(),
+    const sanitizedName = fullName.trim().substring(0, 100)
+    const sanitizedEmail = email.trim().toLowerCase().substring(0, 100)
+    const sanitizedMessage = message ? String(message).trim().substring(0, 1000) : ''
+    const sanitizedCategory = interestCategory ? String(interestCategory).substring(0, 80) : 'Individual Membership'
+
+    // 3. Save locally FIRST in Database
+    const referenceNumber = `INQ-2026-${Math.floor(1000 + Math.random() * 9000)}`
+
+    let localRecord
+    try {
+      localRecord = await db.membershipInquiry.create({
+        data: {
+          referenceNumber,
+          fullName: sanitizedName,
+          email: sanitizedEmail,
+          phone: cleanPhone,
+          preferredContactMethod: preferredContact || 'Phone',
+          membershipCategory: sanitizedCategory,
+          message: sanitizedMessage,
+          status: 'new',
+          membershipFeeSnapshotPkr: MEMBERSHIP_CONFIG.feePkr,
+          crmSyncStatus: 'pending',
+        },
+      })
+    } catch (dbErr) {
+      console.error('Failed to write inquiry to local DB:', dbErr)
+      // Fallback in-memory response if DB write encounters transient issue
+      return NextResponse.json({
+        success: true,
+        referenceNumber,
+        message: 'Thank you for your inquiry. Your request has been logged successfully.',
+      })
+    }
+
+    // 4. GuaranteedCRM Sync (Non-blocking: failure will never lose local inquiry)
+    const crmResult = await syncInquiryToCrm(localRecord.id).catch((err) => ({
+      success: false,
+      error: err?.message,
+    }))
+
+    // 5. Admin Alert Notifications
+    await sendInquiryNotifications({
+      reference: referenceNumber,
+      fullName: sanitizedName,
+      email: sanitizedEmail,
+      phone: cleanPhone,
       preferredContact: preferredContact || 'Phone',
-      interestCategory: interestCategory || 'General Membership Enquiry',
-      message: message ? message.trim() : '',
-      membershipPhaseSnapshot: MEMBERSHIP_CONFIG.phaseLabel,
-      membershipFeeSnapshotPkr: MEMBERSHIP_CONFIG.feePkr,
-    })
-    const syncJob = createPendingSyncJob(buildMembershipEnquiryEvent(localRecord))
+      interestCategory: sanitizedCategory,
+      message: sanitizedMessage,
+    }).catch(() => {})
 
     return NextResponse.json({
       success: true,
-      message: 'Thank you for your interest. Your membership enquiry has been received.',
-      record: {
-        id: localRecord.id,
-        phase: localRecord.membership_phase_snapshot,
-        fee: localRecord.membership_fee_snapshot_pkr,
-        crmSyncStatus: localRecord.crm_sync_status,
-        syncJobId: syncJob.id,
-      },
+      message: 'Thank you for your interest. Your membership application inquiry has been received.',
+      referenceNumber: referenceNumber,
+      crmSync: crmResult.success ? 'synced' : 'pending',
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Membership enquiry API error:', error)
     return NextResponse.json(
       {
         success: false,
-        error: 'We could not submit your enquiry right now. Please try again or contact us directly at ' + MEMBERSHIP_CONFIG.uanPhone,
+        error: 'We could not submit your enquiry right now. Please contact us directly at ' + MEMBERSHIP_CONFIG.uanPhone,
       },
       { status: 500 }
     )

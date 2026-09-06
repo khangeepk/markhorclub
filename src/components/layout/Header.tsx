@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { label: 'GALLERY', href: '#gallery' },
   { label: 'MEMBERSHIP', href: '#membership' },
   { label: 'CONTACT', href: '#contact' },
+  { label: 'ADMIN PORTAL', href: '/admin/login' },
 ]
 
 export default function Header(): JSX.Element {
