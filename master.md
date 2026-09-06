@@ -685,4 +685,40 @@ Created `src/lib/crm/` with:
 - **Production Build**: `npm run build` PASS (18/18 static & dynamic routes compiled)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-FIX-BOOTSTRAP-01 — NEXT.JS RUNTIME RECOVERY
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform`
+
+### ROOT CAUSE DIAGNOSIS
+- **Primary Cause**: Multiple concurrent background `npm run dev` / `next dev` processes (Task IDs `task-228`, `task-378`, `task-439`, `task-637`) were running simultaneously.
+- **Race Condition**: The competing Next.js Webpack compiler workers raced over `.next/cache/webpack`, triggering internal Webpack cache pack corruptions (`TypeError: Cannot read properties of undefined (reading 'hasStartTime')`).
+- **Runtime Impact**: The corrupted cache resulted in incomplete React Server Component (RSC) streaming script tags and failed chunk manifests, manifesting as the Next.js runtime error: `"Invariant: missing bootstrap script. This is a bug in Next.js"`.
+
+### FIX APPLIED
+1. **Process Isolation**: Identified and killed all 4 orphaned/concurrent `node`/Next.js background dev server processes using `manage_task kill` and `Stop-Process`.
+2. **Clean Cache Removal**: Completely deleted stale/corrupted Next build directories `.next` and `.next-stale-gcrm00`.
+3. **Git Hygiene**: Updated `.gitignore` to ignore `.next-stale*` and `*.tsbuildinfo`, and removed tracked stale cache files from Git tracking.
+4. **Layout Integrity Audit**: Confirmed `src/app/layout.tsx` contains valid Next.js App Router structure `<html><body>{children}</body></html>` with proper font & script loading.
+5. **Database Validation**: Verified `prisma/schema.prisma` using `npx prisma validate` (100% success).
+
+### VERIFICATION RESULTS
+- **Next.js Version**: `14.2.35` (App Router + Webpack) — Unchanged (no major framework upgrades required).
+- **Node.js Version**: `v24.18.0`
+- **Cache Cleanup**: COMPLETE (`.next` and `.next-stale-gcrm00` removed).
+- **Dependencies**: PASS (`package-lock.json` clean and consistent).
+- **TypeScript**: PASS (`npx tsc --noEmit` 0 errors).
+- **Production Build**: PASS (`npm run build` 18/18 routes compiled successfully).
+- **Dev Server**: PASS (`npm run dev` running single clean instance on `http://localhost:3000`).
+- **Homepage (`http://localhost:3000/`)**: PASS (Loads normally with zero errors).
+- **Membership Section (`http://localhost:3000/#membership`)**: PASS (Loads normally with zero errors, full form functionality intact).
+- **Admin Portal (`http://localhost:3000/admin`)**: PASS (Protected routes and login intact).
+- **CRM Integration**: PASS (`/api/admin/crm/test-connection` functional).
+- **Browser Console**: `CLEAN` — Zero "missing bootstrap script" runtime errors.
+- **Localhost URL**: `http://localhost:3000`
+
+
 
