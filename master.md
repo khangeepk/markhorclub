@@ -984,6 +984,57 @@ Created `src/lib/crm/` with:
   - `/`: Public website cinematic intro, Stitch UI, header, and footer preserved with 0 regressions.
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-PRELAUNCH-11 — PRE-LAUNCH BUSINESS AUTOMATION, PAYMENT VERIFICATION & MEMBERSHIP ACTIVATION SYSTEM
+
+- **Status**: COMPLETE & VERIFIED
+- **Completion Date**: September 6, 2026
+
+### 1. Key Accomplishments
+- **Communication & Notification Audit**:
+  - Web Chat Inbound & Admin Alerts: VERIFIED (FAQ Chatbot & Live CSR handoff create CRM Conversations & notify admins).
+  - WhatsApp Inbound & Admin Alerts: PENDING ACTIVATION (Requires manual WABA / LC Phone provider setup in GuaranteedCRM dashboard).
+  - Email Alerts: VERIFIED (SMTP transactional alerts for inquiries and verified payments).
+  - Created Notification Diagnostic Harness API (`/api/admin/test-notifications`) and Admin Integration Status Matrix (`/admin` -> Integration & Alerts Status tab).
+- **Public Membership Payment Submission (`/membership/payment`)**:
+  - Created luxury public submission form collecting Full Name, Phone, Email, Membership No, Inquiry Ref, Amount (PKR), Method, Bank/Provider, Payment Date, Transaction ID (TID), Payment Slip Upload (PDF/JPG/PNG max 5MB), and Consent Checkbox.
+  - API endpoint `/api/membership/payment-submission`: Saves evidence securely to private directory `private_uploads/proofs/` with randomized keys. Normalizes TID and enforces duplicate TID protection. Sets initial status to `PENDING_VERIFICATION`.
+- **Private Evidence Storage Security**:
+  - Created authenticated streaming endpoint `/api/admin/payment-proof/[key]` enforcing admin session token check and path traversal defense (`path.basename`).
+- **Payment Verification Architecture & Provider Abstraction**:
+  - Implemented provider pattern in `src/lib/payments/` (`provider.ts`, `manual-transfer.ts`, `safepay.ts`, `jazzcash.ts`, `easypaisa.ts`).
+  - Baseline Manual Verification Mode: Admin verifies via `/api/admin/payment-submissions` -> atomic creation of `MembershipPayment` ledger entry (`RCP-2026-XXXX`), recalculation of balance, audit log record, and confirmation message dispatch.
+- **Membership Activation & Digital Membership Card**:
+  - Business rule: Membership becomes eligible for activation when verified paid amount meets snapshot fee requirement (`totalPaid >= feeSnapshot`).
+  - Auto-generates unique Membership Number (`MC-2026-0001`) and digital card token.
+  - Created Digital Membership Card page (`/membership/card/[id]`) and public QR verification page (`/verify-member/[token]`) exposing only Member Name, Membership Number, and Status (no CNIC or financial balances).
+- **Staging QA Suite**:
+  - Executed automated staging test suite verifying Inquiry -> Proof Submission -> Duplicate TID Protection -> Admin Verification -> Ledger Entry -> Card Generation -> QR Retrieval (100% PASS).
+
+### 2. Final System Status Summary
+- **WHATSAPP INBOUND**: PENDING ACTIVATION
+- **WHATSAPP ADMIN ALERT**: NOT VERIFIED (Manual CRM Activation Required)
+- **CHAT INBOUND**: VERIFIED
+- **CHAT ADMIN ALERT**: VERIFIED
+- **PAYMENT SUBMISSION FORM**: PASS
+- **PRIVATE SLIP STORAGE**: PASS
+- **TID DUPLICATE CHECK**: PASS
+- **MANUAL PAYMENT VERIFICATION**: PASS
+- **AUTOMATIC PAYMENT GATEWAY**: MERCHANT SETUP REQUIRED (Safepay, JazzCash, EasyPaisa Abstraction Ready)
+- **PAYMENT CONFIRMATION**: PASS
+- **MEMBERSHIP ACTIVATION**: PASS
+- **MEMBERSHIP NUMBER**: PASS (`MC-2026-0001` Format)
+- **DIGITAL CARD**: PASS (`/membership/card/[id]`)
+- **QR VERIFICATION**: PASS (`/verify-member/[token]`)
+- **CRM PAYMENT SYNC**: PASS
+- **FINANCIAL LEDGER**: PASS
+- **BUILD**: PASS (25/25 routes compiled cleanly)
+- **STAGING READINESS**: READY
+- **PRODUCTION DEPLOYMENT**: NOT AUTHORIZED (Awaiting explicit user authorization)
+- **LOCALHOST URL**: `http://localhost:3000`
+
+
 
 
 

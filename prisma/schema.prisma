@@ -41,6 +41,9 @@ model Member {
   crmLastSyncedAt       DateTime?
   crmSyncStatus         String              @default("pending") // pending, synced, failed
   crmSyncError          String?
+  digitalCardToken      String?             @unique
+  digitalCardIssuedAt   DateTime?
+  digitalCardStatus     String              @default("eligible") // eligible, issued, revoked, blocked
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
   payments              MembershipPayment[]
@@ -267,3 +270,36 @@ model AppSetting {
 
   @@map("app_settings")
 }
+
+model PaymentSubmission {
+  id                    String    @id @default(uuid())
+  submissionReference   String    @unique // SUB-2026-0001
+  memberId              String?
+  inquiryId             String?
+  fullName              String
+  phone                 String
+  email                 String
+  membershipNumber      String?
+  inquiryReference      String?
+  amount                Float
+  currency              String    @default("PKR")
+  paymentMethod         String    @default("bank_transfer") // bank_transfer, jazzcash, easypaisa, card, online
+  providerName          String?   // Meezan Bank, JazzCash, EasyPaisa, Safepay
+  paymentDate           DateTime  @default(now())
+  transactionReference  String    // TID / Ref Number (normalized for duplicate check)
+  proofStorageKey       String?   // Secure private storage key
+  remarks               String?
+  verificationStatus    String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, AUTO_VERIFIED, MANUALLY_VERIFIED, NEEDS_INFORMATION, REJECTED, DUPLICATE
+  verificationMethod    String?   // manual, webhook, provider_api
+  verifiedAmount        Float?
+  verifiedAt            DateTime?
+  verifiedBy            String?
+  providerTransactionId String?
+  providerStatus        String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([transactionReference, providerName])
+  @@map("payment_submissions")
+}
+

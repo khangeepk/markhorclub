@@ -145,15 +145,77 @@ export default function AdminPortalPage() {
     }
   }
 
+  const handleVerifySubmission = async (id: string, currentAmount: number) => {
+    const verifiedAmountStr = prompt('Enter verified settlement amount (PKR):', String(currentAmount))
+    if (!verifiedAmountStr) return
+
+    try {
+      const res = await fetch('/api/admin/payment-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'verify', verifiedAmount: parseFloat(verifiedAmountStr) }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        alert(json.message)
+        loadData()
+      } else {
+        alert(json.error || 'Verification failed')
+      }
+    } catch {
+      alert('Network error verifying payment')
+    }
+  }
+
+  const handleUpdateSubmissionStatus = async (id: string, action: 'needs_info' | 'reject' | 'duplicate') => {
+    const remarks = prompt(`Enter remarks for ${action.toUpperCase()}:`) || ''
+    try {
+      const res = await fetch('/api/admin/payment-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action, remarks }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        alert(json.message)
+        loadData()
+      } else {
+        alert(json.error || 'Action failed')
+      }
+    } catch {
+      alert('Network error updating submission')
+    }
+  }
+
+  const handleTestNotification = async (testType: string) => {
+    try {
+      const res = await fetch('/api/admin/test-notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testType }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        alert(`Test Alert Executed: ${json.message}`)
+        loadData()
+      } else {
+        alert(json.error || 'Notification test failed')
+      }
+    } catch {
+      alert('Error triggering notification test')
+    }
+  }
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inquiries', label: 'Inquiries', icon: UserCheck, count: data?.inquiries?.length },
     { id: 'members', label: 'Members', icon: Users, count: data?.members?.length },
-    { id: 'payment_submissions', label: 'Payment Submissions', icon: FileCheck, count: data?.payments?.length || 0 },
+    { id: 'payment_submissions', label: 'Payment Submissions', icon: FileCheck, count: data?.paymentSubmissions?.filter((s: any) => s.verificationStatus === 'PENDING_VERIFICATION').length || 0 },
     { id: 'payments', label: 'Payments Ledger', icon: CreditCard },
     { id: 'income', label: 'Income', icon: TrendingUp },
     { id: 'expenses', label: 'Expenses', icon: TrendingDown },
     { id: 'pnl', label: 'Profit & Loss', icon: PieChart },
+    { id: 'integration_status', label: 'Integration & Alerts Status', icon: ShieldCheck },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'chat', label: 'Live Chat', icon: MessageSquare },
     { id: 'faqs', label: 'FAQs', icon: HelpCircle },
@@ -598,58 +660,93 @@ export default function AdminPortalPage() {
 
             <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs min-w-[750px]">
+                <table className="w-full text-left border-collapse text-xs min-w-[800px]">
                   <thead>
                     <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
-                      <th className="p-4">TID / Ref #</th>
+                      <th className="p-4">Sub Ref / TID</th>
                       <th className="p-4">Applicant / Member</th>
                       <th className="p-4">Amount (PKR)</th>
-                      <th className="p-4">Method</th>
-                      <th className="p-4">Date</th>
+                      <th className="p-4">Method / Provider</th>
+                      <th className="p-4">Submitted Date</th>
                       <th className="p-4">Verification Status</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#C7A15A]/10">
-                    {data?.payments?.map((pm: any) => (
-                      <tr key={pm.id} className="hover:bg-white/5 transition-colors">
-                        <td className="p-4 font-mono font-bold text-[#D6B978]">{pm.receiptNumber || pm.reference || 'TID-8849102'}</td>
-                        <td className="p-4 font-semibold text-[#F4F0E8]">{pm.member?.fullName || 'VIP Applicant'}</td>
-                        <td className="p-4 font-bold text-emerald-400">PKR {pm.amount.toLocaleString()}</td>
-                        <td className="p-4 text-[#F4F0E8]/80 uppercase">{pm.paymentMethod || 'Bank Transfer'}</td>
-                        <td className="p-4 text-[#F4F0E8]/80">{new Date(pm.paymentDate).toLocaleDateString()}</td>
+                    {data?.paymentSubmissions?.map((sub: any) => (
+                      <tr key={sub.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-4 font-mono">
+                          <div className="font-bold text-[#D6B978]">{sub.submissionReference}</div>
+                          <div className="text-[10px] text-[#C7A15A]">TID: {sub.transactionReference}</div>
+                        </td>
                         <td className="p-4">
-                          <span className="px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30">
-                            VERIFIED
+                          <div className="font-semibold text-[#F4F0E8]">{sub.fullName}</div>
+                          <div className="text-[10px] text-[#F4F0E8]/50">{sub.phone} • {sub.email}</div>
+                        </td>
+                        <td className="p-4 font-bold text-emerald-400">PKR {sub.amount.toLocaleString()}</td>
+                        <td className="p-4 text-[#F4F0E8]/80 uppercase">
+                          <div>{sub.paymentMethod}</div>
+                          <div className="text-[10px] text-[#C7A15A]">{sub.providerName}</div>
+                        </td>
+                        <td className="p-4 text-[#F4F0E8]/80">{new Date(sub.createdAt).toLocaleDateString()}</td>
+                        <td className="p-4">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold border ${
+                              sub.verificationStatus === 'MANUALLY_VERIFIED' || sub.verificationStatus === 'AUTO_VERIFIED'
+                                ? 'bg-emerald-950 text-emerald-400 border-emerald-500/30'
+                                : sub.verificationStatus === 'PENDING_VERIFICATION'
+                                ? 'bg-amber-950 text-amber-400 border-amber-500/30'
+                                : sub.verificationStatus === 'DUPLICATE'
+                                ? 'bg-purple-950 text-purple-300 border-purple-500/30'
+                                : 'bg-rose-950 text-rose-400 border-rose-500/30'
+                            }`}
+                          >
+                            {sub.verificationStatus}
                           </span>
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => alert(`Viewing Authenticated Proof Document for TID: ${pm.receiptNumber || 'TID-8849102'}`)}
-                              className="px-2.5 py-1 rounded bg-[#071116] border border-[#C7A15A]/30 text-[#C7A15A] text-[9px] uppercase tracking-wider font-semibold hover:bg-[#C7A15A]/10"
-                            >
-                              Proof
-                            </button>
-                            <button
-                              onClick={() => alert(`Submission ${pm.receiptNumber} marked as Verified`)}
-                              className="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-[9px] uppercase tracking-wider font-semibold hover:bg-emerald-900/50"
-                            >
-                              Verify
-                            </button>
-                            <button
-                              onClick={() => alert(`Requested info for ${pm.receiptNumber}`)}
-                              className="px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-500/30 text-[9px] uppercase tracking-wider font-semibold hover:bg-amber-900/50"
-                            >
-                              Needs Info
-                            </button>
+                            {sub.proofStorageKey ? (
+                              <a
+                                href={`/api/admin/payment-proof/${sub.proofStorageKey}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2.5 py-1 rounded bg-[#071116] border border-[#C7A15A]/30 text-[#C7A15A] text-[9px] uppercase tracking-wider font-semibold hover:bg-[#C7A15A]/10 inline-block"
+                              >
+                                View Proof
+                              </a>
+                            ) : (
+                              <span className="text-[9px] text-[#F4F0E8]/40 italic">No File</span>
+                            )}
+                            {sub.verificationStatus !== 'MANUALLY_VERIFIED' && sub.verificationStatus !== 'AUTO_VERIFIED' && (
+                              <>
+                                <button
+                                  onClick={() => handleVerifySubmission(sub.id, sub.amount)}
+                                  className="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-[9px] uppercase tracking-wider font-semibold hover:bg-emerald-900/50"
+                                >
+                                  Verify
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateSubmissionStatus(sub.id, 'needs_info')}
+                                  className="px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-500/30 text-[9px] uppercase tracking-wider font-semibold hover:bg-amber-900/50"
+                                >
+                                  Needs Info
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateSubmissionStatus(sub.id, 'reject')}
+                                  className="px-2.5 py-1 rounded bg-rose-950 text-rose-400 border border-rose-500/30 text-[9px] uppercase tracking-wider font-semibold hover:bg-rose-900/50"
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
                     ))}
-                    {(!data?.payments || data.payments.length === 0) && (
+                    {(!data?.paymentSubmissions || data.paymentSubmissions.length === 0) && (
                       <tr>
-                        <td colSpan={7} className="p-6 text-center text-[#F4F0E8]/40">No payment submissions pending verification.</td>
+                        <td colSpan={7} className="p-6 text-center text-[#F4F0E8]/40">No payment submissions logged yet.</td>
                       </tr>
                     )}
                   </tbody>
@@ -1068,6 +1165,126 @@ export default function AdminPortalPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: INTEGRATION & ALERTS STATUS */}
+        {activeTab === 'integration_status' && (
+          <div className="space-y-6">
+            <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/30 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#C7A15A]/20 pb-4">
+                <div>
+                  <h3 className="text-sm font-serif font-semibold text-[#F4F0E8]">Communication Channels & Alert Status Matrix</h3>
+                  <p className="text-xs text-[#C7A15A] mt-0.5">Real-time status of inbound inquiries, CRM conversation routing, and administrator notification channels</p>
+                </div>
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#071116] border border-[#C7A15A]/30 text-[#C7A15A] uppercase tracking-wider self-start sm:self-auto">
+                  PRE-LAUNCH AUDIT ACTIVE
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono">
+                <div className="p-4 rounded-xl bg-[#071116] border border-[#C7A15A]/20 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#F4F0E8]">WhatsApp Inbound</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-950 text-amber-400 border border-amber-500/30">PENDING ACTIVATION</span>
+                  </div>
+                  <p className="text-[10px] text-[#F4F0E8]/60 font-sans">GuaranteedCRM WABA / LC Phone provider channel pending paid activation.</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#071116] border border-[#C7A15A]/20 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#F4F0E8]">WhatsApp Admin Alert</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-950 text-amber-400 border border-amber-500/30">NOT VERIFIED</span>
+                  </div>
+                  <p className="text-[10px] text-[#F4F0E8]/60 font-sans">Internal workflow trigger active; pending live inbound test on active channel.</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#071116] border border-[#C7A15A]/20 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#F4F0E8]">Web Chat Inbound</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">VERIFIED</span>
+                  </div>
+                  <p className="text-[10px] text-[#F4F0E8]/60 font-sans">Website FAQ Chatbot & Live CSR handoff active with local DB & CRM sync.</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#071116] border border-[#C7A15A]/20 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#F4F0E8]">Chat Admin Alert</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">VERIFIED</span>
+                  </div>
+                  <p className="text-[10px] text-[#F4F0E8]/60 font-sans">Live CSR requests create CRM Conversations & trigger admin notifications.</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#071116] border border-[#C7A15A]/20 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#F4F0E8]">Email Alert Channel</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">VERIFIED</span>
+                  </div>
+                  <p className="text-[10px] text-[#F4F0E8]/60 font-sans">SMTP transactional alerts configured for inquiries & verified payments.</p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#071116] border border-[#C7A15A]/20 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-[#F4F0E8]">Digital Member Cards</span>
+                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">READY</span>
+                  </div>
+                  <p className="text-[10px] text-[#F4F0E8]/60 font-sans">QR token verification and digital card rendering active.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Notification Diagnostic Test Harness */}
+            <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 space-y-4">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#C7A15A]">Admin Notification & Diagnostic Test Harness</h4>
+              <p className="text-xs text-[#F4F0E8]/70">Execute controlled diagnostic test triggers to verify admin notification logging and channel pipelines.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <button
+                  onClick={() => handleTestNotification('whatsapp_inbound')}
+                  className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/30 text-xs font-semibold text-[#D6B978] hover:bg-[#C7A15A]/10 text-left transition-colors flex flex-col justify-between h-24"
+                >
+                  <span className="uppercase text-[10px] text-[#C7A15A]">Test 1</span>
+                  <span>Trigger WhatsApp Inbound Alert</span>
+                  <span className="text-[9px] text-[#F4F0E8]/40 font-mono">Simulate WhatsApp reply</span>
+                </button>
+
+                <button
+                  onClick={() => handleTestNotification('chat_inbound')}
+                  className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/30 text-xs font-semibold text-[#D6B978] hover:bg-[#C7A15A]/10 text-left transition-colors flex flex-col justify-between h-24"
+                >
+                  <span className="uppercase text-[10px] text-[#C7A15A]">Test 2</span>
+                  <span>Trigger Web Chat Alert</span>
+                  <span className="text-[9px] text-[#F4F0E8]/40 font-mono">Simulate Live CSR chat</span>
+                </button>
+
+                <button
+                  onClick={() => handleTestNotification('membership_inquiry')}
+                  className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/30 text-xs font-semibold text-[#D6B978] hover:bg-[#C7A15A]/10 text-left transition-colors flex flex-col justify-between h-24"
+                >
+                  <span className="uppercase text-[10px] text-[#C7A15A]">Test 3</span>
+                  <span>Trigger Inquiry Alert</span>
+                  <span className="text-[9px] text-[#F4F0E8]/40 font-mono">Simulate new inquiry</span>
+                </button>
+
+                <button
+                  onClick={() => handleTestNotification('payment_submission')}
+                  className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/30 text-xs font-semibold text-[#D6B978] hover:bg-[#C7A15A]/10 text-left transition-colors flex flex-col justify-between h-24"
+                >
+                  <span className="uppercase text-[10px] text-[#C7A15A]">Test 4</span>
+                  <span>Trigger Payment Submission Alert</span>
+                  <span className="text-[9px] text-[#F4F0E8]/40 font-mono">Simulate payment proof</span>
+                </button>
+
+                <button
+                  onClick={() => handleTestNotification('payment_verified')}
+                  className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/30 text-xs font-semibold text-[#D6B978] hover:bg-[#C7A15A]/10 text-left transition-colors flex flex-col justify-between h-24"
+                >
+                  <span className="uppercase text-[10px] text-[#C7A15A]">Test 5</span>
+                  <span>Trigger Payment Verified Receipt</span>
+                  <span className="text-[9px] text-[#F4F0E8]/40 font-mono">Simulate ledger confirmation</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -58,10 +58,14 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    // 3. Payments
+    // 3. Payments & Payment Submissions
     const payments = await db.membershipPayment.findMany({
       orderBy: { paymentDate: 'desc' },
       include: { member: true },
+    })
+
+    const paymentSubmissions = await db.paymentSubmission.findMany({
+      orderBy: { createdAt: 'desc' },
     })
 
     // 4. Income
@@ -127,6 +131,7 @@ export async function GET() {
       inquiries,
       visitBookings,
       payments,
+      paymentSubmissions,
       incomeEntries,
       expenses,
       faqs,
