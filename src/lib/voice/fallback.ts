@@ -1,6 +1,8 @@
 import { VoiceProvider, SynthesizeOptions, SynthesizeResult } from './types'
 import { CONCIERGE_AUDIO_MANIFEST } from './concierge-audio'
 import crypto from 'crypto'
+import fs from 'fs'
+import path from 'path'
 
 // In-memory audio cache for normalized text hashes
 const inMemoryAudioCache = new Map<string, { audioUrl: string; timestamp: number }>()
@@ -48,7 +50,10 @@ export class FallbackVoiceProvider implements VoiceProvider {
         (a) => a.key === targetKey && a.language === language
       )
       if (item) {
-        audioUrl = item.path
+        const fullPath = path.join(process.cwd(), 'public', item.path)
+        if (fs.existsSync(fullPath)) {
+          audioUrl = item.path
+        }
       }
     }
 
@@ -57,12 +62,15 @@ export class FallbackVoiceProvider implements VoiceProvider {
     const cachedEntry = inMemoryAudioCache.get(cacheKey)
 
     if (cachedEntry) {
-      return {
-        success: true,
-        audioUrl: cachedEntry.audioUrl,
-        cached: true,
-        provider: 'local_cache',
-        language,
+      const cachedFullPath = path.join(process.cwd(), 'public', cachedEntry.audioUrl)
+      if (fs.existsSync(cachedFullPath)) {
+        return {
+          success: true,
+          audioUrl: cachedEntry.audioUrl,
+          cached: true,
+          provider: 'local_cache',
+          language,
+        }
       }
     }
 
@@ -86,4 +94,3 @@ export class FallbackVoiceProvider implements VoiceProvider {
     }
   }
 }
-

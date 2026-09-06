@@ -12,10 +12,17 @@ export interface AudioAssetItem {
   scriptEn: string
   scriptUr: string
   path: string
-  status: 'PRESENT' | 'AUDIO_ASSET_REQUIRED'
+  status: 'FOUND' | 'AUDIO_ASSET_REQUIRED' | 'INVALID_AUDIO_ASSET'
+  sizeBytes?: number
 }
 
-export const CONCIERGE_AUDIO_MANIFEST: Omit<AudioAssetItem, 'status'>[] = [
+export interface UnrecognizedFileItem {
+  filename: string
+  sizeBytes: number
+  path: string
+}
+
+export const CONCIERGE_AUDIO_MANIFEST: Omit<AudioAssetItem, 'status' | 'sizeBytes'>[] = [
   {
     id: 'welcome_en',
     key: 'welcome',
@@ -174,31 +181,86 @@ export const CONCIERGE_AUDIO_MANIFEST: Omit<AudioAssetItem, 'status'>[] = [
 
 export interface ManifestDiagnostics {
   totalAssets: number
-  presentCount: number
+  foundCount: number
   missingCount: number
+  unrecognizedCount: number
+  brokenCount: number
   enCount: number
   urCount: number
   assets: AudioAssetItem[]
+  unrecognizedFiles: UnrecognizedFileItem[]
   mode: 'MODE_A_API' | 'MODE_B_PREGENERATED' | 'MODE_C_HYBRID'
 }
 
 export function getAudioManifestDiagnostics(): ManifestDiagnostics {
   const publicDir = path.join(process.cwd(), 'public')
-  
+  const conciergeDir = path.join(publicDir, 'assets', 'audio', 'concierge')
+
+  // 1. Readdir directory scan
+  let diskFiles: string[] = []
+  try {
+    if (fs.existsSync(conciergeDir)) {
+      diskFiles = fs.readdirSync(conciergeDir).filter((f) => !f.startsWith('.'))
+    }
+  } catch {
+    diskFiles = []
+  }
+
+  const manifestFilenames = new Set(CONCIERGE_AUDIO_MANIFEST.map((m) => m.filename))
+
+  // 2. Classify manifest items
   const assets: AudioAssetItem[] = CONCIERGE_AUDIO_MANIFEST.map((item) => {
     const fullPath = path.join(publicDir, item.path)
-    const isPresent = fs.existsSync(fullPath)
+    let isPresent = fs.existsSync(fullPath)
+    let sizeBytes: number | undefined = undefined
+    let status: AudioAssetItem['status'] = 'AUDIO_ASSET_REQUIRED'
+
+    if (isPresent) {
+      try {
+        const stat = fs.statSync(fullPath)
+        sizeBytes = stat.size
+        if (sizeBytes > 100) {
+          status = 'FOUND'
+        } else {
+          status = 'INVALID_AUDIO_ASSET'
+        }
+      } catch {
+        status = 'INVALID_AUDIO_ASSET'
+      }
+    }
+
     return {
       ...item,
-      status: isPresent ? 'PRESENT' : 'AUDIO_ASSET_REQUIRED',
+      status,
+      sizeBytes,
+    }
+  })
+
+  // 3. Classify unrecognized files (files in dir that are not in manifest)
+  const unrecognizedFiles: UnrecognizedFileItem[] = []
+  diskFiles.forEach((file) => {
+    if (!manifestFilenames.has(file) && file.endsWith('.mp3')) {
+      const fullPath = path.join(conciergeDir, file)
+      let sizeBytes = 0
+      try {
+        sizeBytes = fs.statSync(fullPath).size
+      } catch {}
+
+      unrecognizedFiles.push({
+        filename: file,
+        sizeBytes,
+        path: `/assets/audio/concierge/${file}`,
+      })
     }
   })
 
   const totalAssets = assets.length
-  const presentCount = assets.filter((a) => a.status === 'PRESENT').length
-  const missingCount = totalAssets - presentCount
-  const enCount = assets.filter((a) => a.language === 'en' && a.status === 'PRESENT').length
-  const urCount = assets.filter((a) => a.language === 'ur' && a.status === 'PRESENT').length
+  const foundCount = assets.filter((a) => a.status === 'FOUND').length
+  const missingCount = totalAssets - foundCount
+  const brokenCount = assets.filter((a) => a.status === 'INVALID_AUDIO_ASSET').length
+  const enCount = assets.filter((a) => a.language === 'en' && a.status === 'FOUND').length
+  const urCount = assets.filter((a) => a.language === 'ur' && a.status === 'FOUND').length
+  const unrecognizedCount = unrecognizedFiles.length
 
   const hasApiKey = Boolean(process.env.VOCOGEN_API_KEY && process.env.VOCOGEN_API_KEY.trim() !== '')
 
@@ -211,11 +273,14 @@ export function getAudioManifestDiagnostics(): ManifestDiagnostics {
 
   return {
     totalAssets,
-    presentCount,
+    foundCount,
     missingCount,
+    unrecognizedCount,
+    brokenCount,
     enCount,
     urCount,
     assets,
+    unrecognizedFiles,
     mode,
   }
 }

@@ -854,6 +854,42 @@ Created `src/lib/crm/` with:
 - **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled cleanly)
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-VOICE-ASSETS-07 — VOCOGEN AUDIO LIBRARY INTEGRATED
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform`
+
+### AUDIO ASSET INVENTORY & DISCOVERY
+1. **Scanned Directory**: `/public/assets/audio/concierge/`
+2. **Audio Files Discovered**: 4 files:
+   - `welcome-en.mp3` (71,514 bytes) — Mapped to `welcome_en` (English Welcome Greeting)
+   - `welcome-ur.mp3` (77,365 bytes) — Mapped to `welcome_ur` (Urdu Welcome Greeting)
+   - `vocogen-44c7fa97-44c7-4fcd-84f3-1d53289d61db.mp3` — Raw VocoGen export alias
+   - `vocogen-910a4644-a35d-4c15-bbcd-d0a2279988a7.mp3` — Raw VocoGen export alias
+3. **Manifest Classification Breakdown**:
+   - **FOUND & MAPPED**: 2 / 14 assets (`welcome-en.mp3`, `welcome-ur.mp3`)
+   - **MISSING ASSETS**: 12 / 14 assets (`membership-fee-en/ur`, `location-en/ur`, `amenities-en/ur`, `book-visit-en/ur`, `human-support-en/ur`, `csr-offline-en/ur`)
+   - **UNRECOGNIZED RAW EXPORTS**: 2 raw export files mapped to primary slots
+   - **INVALID / BROKEN ASSETS**: 0 files
+4. **Safe Fallback Execution**:
+   - Local mapped VocoGen MP3 assets (`welcome-en.mp3`, `welcome-ur.mp3`) are played directly without remote TTS API calls.
+   - For missing assets, `FallbackVoiceProvider` safely returns `provider: 'web_speech'`, enabling browser speech synthesis for dynamic AI responses.
+   - Zero fabricated audio files were created. Missing files display `AUDIO ASSET REQUIRED` in Admin Diagnostics.
+5. **Language Coverage**:
+   - English (`EN`): Active VocoGen audio for Welcome greeting. Dynamic WebSpeech fallback for remaining topics.
+   - Urdu (`UR`): Active VocoGen audio for Urdu Welcome greeting. Dynamic WebSpeech fallback for remaining topics.
+6. **Admin Portal Diagnostics**:
+   - Enhanced Admin Portal UI under `CRM Sync` tab with real-time inventory counters, byte size display, and status badges (`FOUND`, `AUDIO ASSET REQUIRED`, `UNRECOGNIZED EXPORT`).
+
+### QA & BUILD VERIFICATION
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
+- **Production Build**: `npm run build` PASS (19/19 static & dynamic routes compiled cleanly)
+- **Localhost URL**: `http://localhost:3000`
+
+
 
 
 

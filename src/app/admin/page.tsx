@@ -797,18 +797,25 @@ export default function AdminPortalPage() {
               </div>
             </div>
 
-            {/* Voice Concierge & VocoGen Asset Diagnostics (Phase 19) */}
+            {/* Voice Concierge & VocoGen Asset Diagnostics (AG-VOICE-ASSETS-07) */}
             <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#C7A15A]/20 pb-3">
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#C7A15A]">Voice Concierge & VocoGen Asset Diagnostics</h4>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#C7A15A]">Voice Concierge & VocoGen Asset Inventory</h4>
                   <p className="text-[11px] text-[#F4F0E8]/70 mt-0.5">
-                    Mode: <span className="font-mono text-[#D6B978]">{data?.voiceDiagnostics?.mode || 'MODE_C_HYBRID'}</span> • English Assets: <span className="text-emerald-400 font-bold">{data?.voiceDiagnostics?.enCount || 0}/7</span> • Urdu Assets: <span className="text-emerald-400 font-bold">{data?.voiceDiagnostics?.urCount || 0}/7</span>
+                    Mode: <span className="font-mono text-[#D6B978]">{data?.voiceDiagnostics?.mode || 'MODE_C_HYBRID'}</span> • Mapped Assets: <span className="text-emerald-400 font-bold">{data?.voiceDiagnostics?.foundCount || 0}/14</span> • EN: <span className="text-emerald-400 font-bold">{data?.voiceDiagnostics?.enCount || 0}/7</span> • UR: <span className="text-emerald-400 font-bold">{data?.voiceDiagnostics?.urCount || 0}/7</span>
                   </p>
                 </div>
-                <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#071116] border border-[#C7A15A]/40 text-[#C7A15A] uppercase tracking-wider self-start sm:self-auto">
-                  {data?.voiceDiagnostics?.missingCount || 0} Assets Required
-                </span>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#071116] border border-[#C7A15A]/40 text-[#C7A15A] uppercase tracking-wider">
+                    {data?.voiceDiagnostics?.missingCount || 0} Assets Missing
+                  </span>
+                  {data?.voiceDiagnostics?.unrecognizedCount > 0 && (
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-purple-950 border border-purple-500/40 text-purple-300 uppercase tracking-wider">
+                      {data?.voiceDiagnostics?.unrecognizedCount} Unrecognized Raw Exports
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Assets Grid */}
@@ -825,11 +832,17 @@ export default function AdminPortalPage() {
                           {asset.language.toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-[10px] font-mono text-[#F4F0E8]/50 mt-0.5">{asset.filename}</div>
+                      <div className="text-[10px] font-mono text-[#F4F0E8]/50 mt-0.5">
+                        {asset.filename} {asset.sizeBytes ? `(${(asset.sizeBytes / 1024).toFixed(1)} KB)` : ''}
+                      </div>
                     </div>
-                    {asset.status === 'PRESENT' ? (
+                    {asset.status === 'FOUND' ? (
                       <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">
-                        PRESENT
+                        FOUND
+                      </span>
+                    ) : asset.status === 'INVALID_AUDIO_ASSET' ? (
+                      <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-rose-950 text-rose-400 border border-rose-500/30">
+                        INVALID AUDIO ASSET
                       </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-950 text-amber-400 border border-amber-500/30">
@@ -839,6 +852,24 @@ export default function AdminPortalPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Unrecognized Raw Exports Section if present */}
+              {data?.voiceDiagnostics?.unrecognizedFiles?.length > 0 && (
+                <div className="pt-3 border-t border-[#C7A15A]/10">
+                  <h5 className="text-[11px] font-semibold text-[#D6B978] uppercase tracking-wider mb-2">Unrecognized VocoGen Raw Exports (/public/assets/audio/concierge/)</h5>
+                  <div className="space-y-1.5">
+                    {data?.voiceDiagnostics?.unrecognizedFiles?.map((file: any) => (
+                      <div key={file.filename} className="p-2.5 rounded-lg bg-[#071116] border border-[#C7A15A]/15 flex items-center justify-between text-xs font-mono">
+                        <span className="text-[#F4F0E8]/80">{file.filename}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#C7A15A] text-[10px]">{(file.sizeBytes / 1024).toFixed(1)} KB</span>
+                          <span className="px-2 py-0.5 rounded text-[9px] uppercase bg-purple-950 text-purple-300 border border-purple-500/30">UNRECOGNIZED EXPORT</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Stage Mapping Overview Grid */}
