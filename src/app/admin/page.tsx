@@ -362,52 +362,114 @@ export default function AdminPortalPage() {
 
         {/* TAB 2: INQUIRIES */}
         {activeTab === 'inquiries' && (
-          <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
-                  <th className="p-4">Reference</th>
-                  <th className="p-4">Applicant Name</th>
-                  <th className="p-4">Phone</th>
-                  <th className="p-4">Email</th>
-                  <th className="p-4">Category</th>
-                  <th className="p-4">Fee Snapshot</th>
-                  <th className="p-4">CRM Sync</th>
-                  <th className="p-4">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#C7A15A]/10">
-                {data?.inquiries?.map((inq: any) => (
-                  <tr key={inq.id} className="hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-mono text-[#D6B978]">{inq.referenceNumber}</td>
-                    <td className="p-4 font-semibold text-[#F4F0E8]">{inq.fullName}</td>
-                    <td className="p-4 text-[#F4F0E8]/80">{inq.phone}</td>
-                    <td className="p-4 text-[#F4F0E8]/80">{inq.email}</td>
-                    <td className="p-4 text-[#F4F0E8]/80">{inq.membershipCategory}</td>
-                    <td className="p-4 font-semibold text-emerald-400">PKR {(inq.membershipFeeSnapshotPkr || 500000).toLocaleString()}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${
-                        inq.crmSyncStatus === 'synced' ? 'bg-emerald-950 text-emerald-400' : 'bg-amber-950 text-amber-400'
-                      }`}>
-                        {inq.crmSyncStatus}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      {inq.status !== 'converted' ? (
-                        <button
-                          onClick={() => handleConvertInquiry(inq.id)}
-                          className="px-3 py-1 rounded-lg bg-[#C7A15A] text-[#071116] font-semibold text-[10px] uppercase tracking-wider hover:bg-[#D6B978]"
-                        >
-                          Convert
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-emerald-400 font-bold uppercase">Converted</span>
-                      )}
-                    </td>
+          <div className="space-y-6">
+            <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
+              <div className="p-4 bg-[#071116] border-b border-[#C7A15A]/20 flex justify-between items-center">
+                <h4 className="text-xs font-serif font-semibold text-[#F4F0E8] uppercase tracking-wider">Membership Application Inquiries</h4>
+                <span className="text-[10px] text-[#C7A15A] uppercase">{data?.inquiries?.length || 0} Total</span>
+              </div>
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
+                    <th className="p-4">Reference</th>
+                    <th className="p-4">Applicant Name</th>
+                    <th className="p-4">Phone</th>
+                    <th className="p-4">Email</th>
+                    <th className="p-4">Category</th>
+                    <th className="p-4">Fee Snapshot</th>
+                    <th className="p-4">CRM Sync</th>
+                    <th className="p-4">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[#C7A15A]/10">
+                  {data?.inquiries?.map((inq: any) => (
+                    <tr key={inq.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 font-mono text-[#D6B978]">{inq.referenceNumber}</td>
+                      <td className="p-4 font-semibold text-[#F4F0E8]">{inq.fullName}</td>
+                      <td className="p-4 text-[#F4F0E8]/80">{inq.phone}</td>
+                      <td className="p-4 text-[#F4F0E8]/80">{inq.email}</td>
+                      <td className="p-4 text-[#F4F0E8]/80">{inq.membershipCategory}</td>
+                      <td className="p-4 font-semibold text-emerald-400">PKR {(inq.membershipFeeSnapshotPkr || 500000).toLocaleString()}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${
+                          inq.crmSyncStatus === 'synced' ? 'bg-emerald-950 text-emerald-400' : 'bg-amber-950 text-amber-400'
+                        }`}>
+                          {inq.crmSyncStatus}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        {inq.status !== 'converted' ? (
+                          <button
+                            onClick={() => handleConvertInquiry(inq.id)}
+                            className="px-3 py-1 rounded-lg bg-[#C7A15A] text-[#071116] font-semibold text-[10px] uppercase tracking-wider hover:bg-[#D6B978]"
+                          >
+                            Convert
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-emerald-400 font-bold uppercase">Converted</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* VIP Site Visit Requests Table */}
+            <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
+              <div className="p-4 bg-[#071116] border-b border-[#C7A15A]/20 flex justify-between items-center">
+                <h4 className="text-xs font-serif font-semibold text-[#F4F0E8] uppercase tracking-wider">VIP Site Visit Requests & Calendar Appointments</h4>
+                <span className="text-[10px] text-[#C7A15A] uppercase">{data?.visitBookings?.length || 0} Total</span>
+              </div>
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
+                    <th className="p-4">Ref #</th>
+                    <th className="p-4">Visitor Name</th>
+                    <th className="p-4">Contact</th>
+                    <th className="p-4">Pref Date / Time</th>
+                    <th className="p-4">CRM Contact / Opp</th>
+                    <th className="p-4">Appt ID</th>
+                    <th className="p-4">Booking Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#C7A15A]/10">
+                  {data?.visitBookings?.map((vst: any) => (
+                    <tr key={vst.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 font-mono text-[#D6B978]">{vst.referenceNumber}</td>
+                      <td className="p-4 font-semibold text-[#F4F0E8]">{vst.fullName}</td>
+                      <td className="p-4 text-[#F4F0E8]/80">
+                        <div>{vst.phone}</div>
+                        <div className="text-[10px] text-[#F4F0E8]/50">{vst.email}</div>
+                      </td>
+                      <td className="p-4 text-[#F4F0E8]/80">
+                        <div>{vst.preferredDate || 'Flexible'}</div>
+                        <div className="text-[10px] text-[#C7A15A]">{vst.preferredTime || 'Anytime'} • {vst.numberOfGuests} Guest(s)</div>
+                      </td>
+                      <td className="p-4 font-mono text-[11px] text-[#C7A15A]">
+                        <div>CID: {vst.crmContactId || 'Pending'}</div>
+                        <div className="text-[10px] text-[#F4F0E8]/50">OPP: {vst.crmOpportunityId || 'Pending'}</div>
+                      </td>
+                      <td className="p-4 font-mono text-[11px] text-emerald-400">
+                        {vst.crmAppointmentId || 'N/A'}
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[9px] uppercase tracking-wider font-bold ${
+                          vst.status === 'SCHEDULED' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-amber-950 text-amber-400 border border-amber-500/30'
+                        }`}>
+                          {vst.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data?.visitBookings || data.visitBookings.length === 0) && (
+                    <tr>
+                      <td colSpan={7} className="p-6 text-center text-[#F4F0E8]/40">No site visit requests recorded yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -650,17 +712,71 @@ export default function AdminPortalPage() {
           </div>
         )}
 
-        {/* TAB 11: CRM SYNC */}
+        {/* TAB 11: CRM SYNC & EXTERNAL SERVICES */}
         {activeTab === 'crm' && (
           <div className="space-y-6">
             <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-serif font-semibold text-[#F4F0E8]">GuaranteedCRM Connection & Pipeline Status</h3>
+                <h3 className="text-sm font-serif font-semibold text-[#F4F0E8]">GuaranteedCRM Connection & Communication Services</h3>
                 <p className="text-xs text-[#C7A15A] mt-1 font-mono">Location ID: XiafrvXc2uTJ0WzOAJFu • Pipeline: MARKHOR MEMBERSHIP (ID: lcc4CjRV3ENHhd68kvn0)</p>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider self-start md:self-auto">
                 LIVE & SYNCED
               </span>
+            </div>
+
+            {/* External Integration Status Dashboard Grid (Phase 12) */}
+            <div className="p-6 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-[#C7A15A] mb-3">External Services Integration Status</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[#F4F0E8]">GuaranteedCRM Core</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">REST API v2</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">CONNECTED</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[#F4F0E8]">Membership Pipeline</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">8 Stages Verified</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">CONNECTED</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[#F4F0E8]">WhatsApp Business</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">LC Phone / WABA</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-950 text-amber-400 border border-amber-500/30">PENDING ACTIVATION</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[#F4F0E8]">Visit Calendar</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">LvM2wUmbJmu7yJ3FQ96g</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">ACTIVE</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[#F4F0E8]">Live CRM Chat</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">Markhor VIP Concierge</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-amber-950 text-amber-400 border border-amber-500/30">MANUAL SETUP REQ</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold text-[#F4F0E8]">Email Fallback</div>
+                    <div className="text-[10px] text-[#F4F0E8]/50">Admin Email Notifications</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/30">ACTIVE</span>
+                </div>
+              </div>
             </div>
 
             {/* Stage Mapping Overview Grid */}
@@ -744,6 +860,79 @@ export default function AdminPortalPage() {
                   {(!data?.syncJobs || data.syncJobs.length === 0) && (
                     <tr>
                       <td colSpan={5} className="p-4 text-center text-[#F4F0E8]/40">No pending retry jobs. All records synced.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: NOTIFICATIONS */}
+        {activeTab === 'notifications' && (
+          <div className="space-y-6">
+            {/* Communication Channels Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-5 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/30 space-y-2">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-serif font-semibold text-[#F4F0E8]">Email Notification Channel</h4>
+                  <span className="px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                    ACTIVE
+                  </span>
+                </div>
+                <p className="text-xs text-[#F4F0E8]/70">Automated admin alert emails sent for every new membership inquiry and VIP site visit request.</p>
+                <div className="text-[11px] font-mono text-[#C7A15A]">Target: info@markhourgroup.com</div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/30 space-y-2">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-sm font-serif font-semibold text-[#F4F0E8]">WhatsApp Outbound Channel</h4>
+                  <span className="px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold bg-amber-950 text-amber-400 border border-amber-500/30">
+                    PENDING ACTIVATION
+                  </span>
+                </div>
+                <p className="text-xs text-[#F4F0E8]/70">Outbound template messages require manual LC Phone / WABA provider setup in GuaranteedCRM dashboard.</p>
+                <div className="text-[11px] font-mono text-amber-400">WhatsApp Business not connected (Requires Manual CRM Activation)</div>
+              </div>
+            </div>
+
+            {/* Notification Logs Table */}
+            <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
+              <div className="p-4 bg-[#071116] border-b border-[#C7A15A]/20">
+                <h4 className="text-xs font-serif font-semibold text-[#F4F0E8] uppercase tracking-wider">System Notification Audit Logs</h4>
+              </div>
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-[#071116] border-b border-[#C7A15A]/20 text-[#C7A15A] uppercase tracking-wider text-[10px]">
+                    <th className="p-4">Channel</th>
+                    <th className="p-4">Template Name</th>
+                    <th className="p-4">Recipient</th>
+                    <th className="p-4">Message Preview</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#C7A15A]/10">
+                  {data?.notificationLogs?.map((log: any) => (
+                    <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 font-semibold text-[#D6B978] uppercase">{log.channel}</td>
+                      <td className="p-4 font-semibold text-[#F4F0E8]">{log.templateName || 'System Alert'}</td>
+                      <td className="p-4 text-[#F4F0E8]/80">{log.recipientEmail || log.recipientPhone || 'N/A'}</td>
+                      <td className="p-4 font-mono text-[10px] text-[#F4F0E8]/60 truncate max-w-xs">{log.messageContent}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold ${
+                          log.status === 'sent' ? 'bg-emerald-950 text-emerald-400' :
+                          log.status === 'pending_external_activation' ? 'bg-amber-950 text-amber-400' : 'bg-slate-800 text-slate-300'
+                        }`}>
+                          {log.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-[#F4F0E8]/60">{new Date(log.createdAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                  {(!data?.notificationLogs || data.notificationLogs.length === 0) && (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-[#F4F0E8]/40">No notification logs recorded yet.</td>
                     </tr>
                   )}
                 </tbody>

@@ -374,6 +374,41 @@ export class GuaranteedCrmClient {
     })
     return res.data?.calendars || []
   }
+
+  async createAppointment(data: {
+    calendarId: string
+    contactId: string
+    startTime?: string
+    title?: string
+    notes?: string
+  }): Promise<{ appointmentId?: string; success: boolean; error?: string }> {
+    const payload = {
+      calendarId: data.calendarId,
+      locationId: this.locationId,
+      contactId: data.contactId,
+      startTime: data.startTime || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      title: data.title || 'Markhor Club VIP Visit',
+      appointmentStatus: 'confirmed',
+      notes: data.notes || 'Site visit request submitted via Markhor Club portal',
+    }
+
+    const res = await this.request('/calendars/events/appointments', {
+      method: 'POST',
+      body: payload,
+    })
+
+    if (res.success && (res.data?.id || res.data?.appointment?.id || res.data?.event?.id)) {
+      return {
+        success: true,
+        appointmentId: res.data?.id || res.data?.appointment?.id || res.data?.event?.id,
+      }
+    }
+
+    return {
+      success: false,
+      error: res.error || 'Failed to create appointment',
+    }
+  }
 }
 
 export const crmClient = new GuaranteedCrmClient()

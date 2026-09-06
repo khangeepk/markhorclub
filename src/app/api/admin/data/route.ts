@@ -48,8 +48,12 @@ export async function GET() {
 
     const outstandingBalance = Math.max(0, totalContractValue - totalFeesReceived)
 
-    // 2. Inquiries
+    // 2. Inquiries & Visit Bookings
     const inquiries = await db.membershipInquiry.findMany({
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const visitBookings = await db.visitBooking.findMany({
       orderBy: { createdAt: 'desc' },
     })
 
@@ -117,6 +121,7 @@ export async function GET() {
       },
       members: formattedMembers,
       inquiries,
+      visitBookings,
       payments,
       incomeEntries,
       expenses,

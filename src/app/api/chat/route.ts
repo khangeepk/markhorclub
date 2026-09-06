@@ -3,7 +3,47 @@ import { db } from '@/lib/db'
 
 export async function POST(request: Request) {
   try {
-    const { message, conversationId } = await request.json()
+    const body = await request.json()
+    const { message, conversationId, action, fullName, email, phone } = body
+
+    // Action: Leave Offline Message for CSR
+    if (action === 'leaveMessage') {
+      if (!fullName || !phone || !message) {
+        return NextResponse.json({ success: false, error: 'Name, phone, and message are required.' }, { status: 400 })
+      }
+
+      const conv = await db.chatConversation.create({
+        data: {
+          visitorName: String(fullName).trim(),
+          visitorEmail: email ? String(email).trim().toLowerCase() : null,
+          visitorPhone: String(phone).trim(),
+          status: 'transferred_to_csr',
+          messages: {
+            create: [
+              { senderType: 'visitor', message: String(message).trim() },
+              { senderType: 'bot', message: 'Offline message logged. A representative will contact you shortly.' },
+            ],
+          },
+        },
+      })
+
+      // Create sync job to log in CRM Contact/Opportunity
+      await db.crmSyncJob.create({
+        data: {
+          entityType: 'contact',
+          entityId: conv.id,
+          eventName: 'chat_offline_message',
+          payload: JSON.stringify({ fullName, email, phone, message }),
+          status: 'pending',
+        },
+      }).catch(() => {})
+
+      return NextResponse.json({
+        success: true,
+        reply: 'Thank you. Your message has been received and routed to our sales team.',
+        conversationId: conv.id,
+      })
+    }
 
     if (!message || typeof message !== 'string' || !message.trim()) {
       return NextResponse.json({ success: false, error: 'Message cannot be empty.' }, { status: 400 })

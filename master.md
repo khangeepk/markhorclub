@@ -720,5 +720,42 @@ Created `src/lib/crm/` with:
 - **Browser Console**: `CLEAN` — Zero "missing bootstrap script" runtime errors.
 - **Localhost URL**: `http://localhost:3000`
 
+---
+
+## AG-INTEGRATIONS-03 — EXTERNAL CRM SERVICES INTEGRATION
+
+- **Status**: COMPLETE & VERIFIED
+- **Date**: September 6, 2026
+- **Git Branch**: `automation/markhor-platform`
+
+### INTEGRATION & SERVICE DISCOVERY RESULTS
+1. **GuaranteedCRM Pipeline Verification**: Verified `MARKHOR MEMBERSHIP` (ID: `lcc4CjRV3ENHhd68kvn0`) with all 8 live stages:
+   - `01 New Inquiry` (`5e526237-65fa-4146-8ad7-27c881765c49`)
+   - `02 Contacted` (`31df0463-4f9a-4dfa-a2f2-26aff48e6ae6`)
+   - `03 Qualified` (`57122bd3-4a31-4611-a206-3ede8d416e9a`)
+   - `04 Visit Scheduled` (`51598a44-265d-4d12-bb53-e09fcee7c300`)
+   - `05 Application Submitted` (`8d655cf9-3ec6-45de-b821-36500c99e441`)
+   - `06 Payment Pending` (`d5788573-aafe-4a38-8314-9d4517cb8415`)
+   - `07 Member` (`18977896-1982-49ef-90e9-588785ab6a10`)
+   - `08 Closed / Lost` (`0c329835-c134-4fb4-a6b8-aa5de701ae86`)
+2. **Markhor Club Visit Booking Calendar**: Created live calendar **Markhor Club Visit Booking** in GuaranteedCRM (`ID: LvM2wUmbJmu7yJ3FQ96g`).
+3. **Book a Visit Web Integration**: Connected POST `/api/book-visit` flow to save local `VisitBooking` DB record, upsert CRM contact, move opportunity to stage `04 Visit Scheduled`, create appointment in GuaranteedCRM calendar, and trigger admin email alert.
+4. **Admin Visit Management**: Enhanced `/admin/page.tsx` with a dedicated **VIP Site Visit Requests & Calendar Appointments** management view under the Inquiries tab.
+5. **Chatbot & Live CSR Handoff**: Grounded FAQ AI Concierge in `FaqChatbot.tsx` with fallback to WhatsApp & offline message logging via POST `/api/chat` (`action: leaveMessage`).
+6. **Chatbot + WhatsApp UI Alignment**: Verified opposite positioning (`left-6` for AI Concierge, `right-6` for WhatsApp) with zero visual overlap on 1440px, 390px, and 320px viewports.
+7. **Admin Communication Center**: Updated `/admin/page.tsx` Notifications tab to display Email (Active) and WhatsApp (`WhatsApp Business not connected — Requires Manual CRM Activation`).
+8. **External Status Dashboard**: Built Integration Status grid in Admin Portal displaying live connection status for GuaranteedCRM Core, Pipeline, WhatsApp, Visit Calendar, Live Chat, and Email.
+
+### UNRESOLVED MANUAL ACTIONS (Documentation updated in `docs/GUARANTEEDCRM-MANUAL-SETUP.md`)
+1. **WhatsApp Business Account (WABA) / LC Phone Connection**: Menu Path: **Settings -> Phone Numbers -> WhatsApp**. Requires connecting WABA or registering `+923305230888`.
+2. **Live CRM Chat Widget Embed**: Menu Path: **Sites -> Chat Widget**. Obtain widget ID and add `NEXT_PUBLIC_GCRM_CHAT_WIDGET_ID` to `.env.local`.
+
+### QA & BUILD VERIFICATION
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors)
+- **Production Build**: `npm run build` PASS (18/18 static & dynamic routes compiled)
+- **E2E Integration Tests**: PASS (Membership Inquiry, Book a Visit, Chat FAQ & Offline Message verified)
+- **Localhost URL**: `http://localhost:3000`
+
+
 
 

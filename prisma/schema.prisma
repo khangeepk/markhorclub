@@ -69,6 +69,29 @@ model MembershipInquiry {
   @@map("membership_inquiries")
 }
 
+model VisitBooking {
+  id                      String    @id @default(uuid())
+  referenceNumber         String    @unique // VST-2026-0001
+  fullName                String
+  email                   String
+  phone                   String
+  preferredDate           String?
+  preferredTime           String?
+  numberOfGuests          Int       @default(1)
+  specialRequests         String?
+  status                  String    @default("REQUESTED") // REQUESTED, PENDING_CONFIRMATION, SCHEDULED, COMPLETED, CANCELLED
+  crmContactId            String?
+  crmOpportunityId        String?
+  crmAppointmentId        String?
+  crmSyncStatus           String    @default("pending") // pending, processing, synced, failed
+  crmSyncError            String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  @@map("visit_bookings")
+}
+
+
 model MembershipPayment {
   id             String   @id @default(uuid())
   memberId       String
