@@ -14,9 +14,9 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import gsap from 'gsap'
 
 const INTRO_VIDEO_PRIMARY = '/assets/video/markhor-intro.mp4'
-const INTRO_VIDEO_ALT = '/Assets/video/markhor-intro.mp4'
+const INTRO_VIDEO_ALT = '/assets/video/markhor-intro.mp4'
 const INTRO_POSTER_PRIMARY = '/assets/video/markhor-intro-poster.jpg'
-const INTRO_POSTER_ALT = '/Assets/video/markhor-intro-poster.jpg'
+const INTRO_POSTER_ALT = '/assets/video/markhor-intro-poster.jpg'
 
 export type IntroStatus = 'loading' | 'playing' | 'exiting' | 'complete'
 

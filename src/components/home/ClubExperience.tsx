@@ -6,11 +6,11 @@ import Container from '../ui/Container'
 import ConceptDisclaimer from '../ui/ConceptDisclaimer'
 
 const AMENITIES = [
-  { number: '01', title: 'RESTAURANTS', subhead: 'DINING DESIGNED FOR CONNECTION.', copy: 'Refined social spaces envisioned for memorable meals, relaxed conversations and elevated club dining.', image: '/Assets/images/Restaurant 3.png', tags: ['DINING', 'SOCIAL', 'HOSPITALITY'] },
-  { number: '02', title: 'GYM & FITNESS', subhead: 'MOVE. STRENGTHEN. RECHARGE.', copy: 'A contemporary fitness environment conceived to make wellness and performance part of everyday club life.', image: '/Assets/images/Gym.png', tags: ['FITNESS', 'STRENGTH', 'WELLNESS'] },
-  { number: '03', title: 'INDOOR SPORTS', subhead: 'PLAY BEYOND THE WEATHER.', copy: 'Dynamic indoor recreation designed for year-round energy, competition and social connection.', image: '/Assets/images/Sports 1.png', tags: ['PLAY', 'COMPETE', 'CONNECT'] },
-  { number: '04', title: 'JACUZZI & WELLNESS', subhead: 'SLOW DOWN. RESET.', copy: 'An intimate wellness experience designed around warmth, calm and restorative moments.', image: '/Assets/images/amenity-jacuzzi.jpg', tags: ['RELAX', 'RESTORE', 'RECHARGE'] },
-  { number: '05', title: 'SWIMMING POOL', subhead: 'LEISURE, REFLECTED IN WATER.', copy: 'A resort-inspired pool environment imagined for relaxed afternoons, family leisure and effortless escape.', image: '/Assets/images/Gym 1.png', tags: ['SWIM', 'RELAX', 'ESCAPE'] },
+  { number: '01', title: 'RESTAURANTS', subhead: 'DINING DESIGNED FOR CONNECTION.', copy: 'Refined social spaces envisioned for memorable meals, relaxed conversations and elevated club dining.', image: '/assets/images/Restaurant 3.png', tags: ['DINING', 'SOCIAL', 'HOSPITALITY'] },
+  { number: '02', title: 'GYM & FITNESS', subhead: 'MOVE. STRENGTHEN. RECHARGE.', copy: 'A contemporary fitness environment conceived to make wellness and performance part of everyday club life.', image: '/assets/images/Gym.png', tags: ['FITNESS', 'STRENGTH', 'WELLNESS'] },
+  { number: '03', title: 'INDOOR SPORTS', subhead: 'PLAY BEYOND THE WEATHER.', copy: 'Dynamic indoor recreation designed for year-round energy, competition and social connection.', image: '/assets/images/Sports 1.png', tags: ['PLAY', 'COMPETE', 'CONNECT'] },
+  { number: '04', title: 'JACUZZI & WELLNESS', subhead: 'SLOW DOWN. RESET.', copy: 'An intimate wellness experience designed around warmth, calm and restorative moments.', image: '/assets/images/amenity-jacuzzi.jpg', tags: ['RELAX', 'RESTORE', 'RECHARGE'] },
+  { number: '05', title: 'SWIMMING POOL', subhead: 'LEISURE, REFLECTED IN WATER.', copy: 'A resort-inspired pool environment imagined for relaxed afternoons, family leisure and effortless escape.', image: '/assets/images/Gym 1.png', tags: ['SWIM', 'RELAX', 'ESCAPE'] },
 ]
 
 export default function ClubExperience() {

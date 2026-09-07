@@ -44,7 +44,7 @@ export default function BrandStory() {
         <div className="relative mb-14 grid items-stretch gap-8 lg:grid-cols-12">
           <figure className="group relative overflow-hidden border border-[#C7A15A]/25 bg-[#0B1C26] p-2 shadow-2xl sm:p-3 lg:col-span-7">
             <div className="relative h-[360px] overflow-hidden sm:h-[480px] lg:h-[560px]">
-              <Image src="/Assets/images/Markhor Statue.png" alt="Markhor Club statue and clubhouse arrival" fill sizes="(max-width: 1024px) 100vw, 58vw" className="object-cover transition duration-1000 group-hover:scale-[1.025]" />
+              <Image src="/assets/images/Markhor Statue.png" alt="Markhor Club statue and clubhouse arrival" fill sizes="(max-width: 1024px) 100vw, 58vw" className="object-cover transition duration-1000 group-hover:scale-[1.025]" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#071116]/80 via-transparent to-[#071116]/10" />
               <div className="absolute bottom-5 left-5"><ConceptDisclaimer label="Artist's Impression" /></div>
             </div>
@@ -56,14 +56,14 @@ export default function BrandStory() {
           <div className="flex flex-col gap-8 lg:col-span-5 lg:gap-10">
             <figure className="group border border-[#C7A15A]/20 bg-[#0B1C26] p-2 shadow-xl">
               <div className="relative h-56 overflow-hidden sm:h-72">
-                <Image src="/Assets/images/Markhor Lobby.png" alt="Markhor Club social lobby environment" fill sizes="(max-width: 1024px) 100vw, 42vw" className="object-cover transition duration-1000 group-hover:scale-105" />
+                <Image src="/assets/images/Markhor Lobby.png" alt="Markhor Club social lobby environment" fill sizes="(max-width: 1024px) 100vw, 42vw" className="object-cover transition duration-1000 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#071116]/75 via-transparent to-transparent" />
               </div>
               <figcaption className="pt-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#C7A15A]">Plate II — Leisure & Connection</figcaption>
             </figure>
             <figure className="group border border-[#C7A15A]/20 bg-[#0B1C26] p-2 shadow-xl">
               <div className="relative h-56 overflow-hidden sm:h-64">
-                <Image src="/Assets/images/yatch view.png" alt="Markhor Club yacht-side water escape" fill sizes="(max-width: 1024px) 100vw, 42vw" className="object-cover transition duration-1000 group-hover:scale-105" />
+                <Image src="/assets/images/yatch view.png" alt="Markhor Club yacht-side water escape" fill sizes="(max-width: 1024px) 100vw, 42vw" className="object-cover transition duration-1000 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#071116]/65 via-transparent to-transparent" />
               </div>
               <figcaption className="pt-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#C7A15A]">Plate III — Water &amp; Escape</figcaption>

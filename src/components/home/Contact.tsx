@@ -13,7 +13,7 @@ export default function Contact() {
         <div className="grid items-stretch gap-10 lg:grid-cols-12 lg:gap-16">
           <div className="relative min-h-[420px] overflow-hidden border border-[#C7A15A]/25 bg-[#071116] p-3 lg:col-span-7">
             <div className="relative h-full min-h-[394px] overflow-hidden">
-              <Image src="/Assets/images/Dam View.png" alt="Khanpur Dam destination view" fill sizes="(max-width: 1024px) 100vw, 58vw" className="object-cover" />
+              <Image src="/assets/images/Dam View.png" alt="Khanpur Dam destination view" fill sizes="(max-width: 1024px) 100vw, 58vw" className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#071116] via-[#071116]/20 to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-4">
                 <div>

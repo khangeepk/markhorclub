@@ -10,7 +10,7 @@ const CHAPTERS = [
     number: '01',
     label: 'FAMILY WATER PLAY',
     title: 'WHERE EVERY AGE FINDS A REASON TO STAY.',
-    image: '/Assets/images/aqua-family-play.png',
+    image: '/assets/images/aqua-family-play.png',
     alt: 'Conceptual family water play experience',
     copy: 'Playful water spaces imagined for children, families and shared days under the open sky.',
   },
@@ -18,7 +18,7 @@ const CHAPTERS = [
     number: '02',
     label: 'WATER ADVENTURE',
     title: 'A LITTLE MORE ENERGY IN EVERY DROP.',
-    image: '/Assets/images/aqua-water-adventure.png',
+    image: '/assets/images/aqua-water-adventure.png',
     alt: 'Conceptual water adventure experience',
     copy: 'Movement, speed and open-air adventure bring a more energetic rhythm to the water.',
   },
@@ -26,7 +26,7 @@ const CHAPTERS = [
     number: '03',
     label: 'POOLS & LEISURE',
     title: 'SLOWER MOMENTS BELONG HERE TOO.',
-    image: '/Assets/images/Gym 1.png',
+    image: '/assets/images/Gym 1.png',
     alt: 'Swimming pool and leisure experience',
     copy: 'Quiet pools, shaded pauses and easy afternoons create room to slow down and reset.',
   },
@@ -34,7 +34,7 @@ const CHAPTERS = [
     number: '04',
     label: 'FAMILY ESCAPE',
     title: 'A DAY THAT BECOMES A MEMORY.',
-    image: '/Assets/images/boating.jpg',
+    image: '/assets/images/boating.jpg',
     alt: 'Khanpur Dam view for a family day destination',
     copy: 'A full day shaped by water, landscape, leisure and the people who make it memorable.',
   },
@@ -80,7 +80,7 @@ export default function AquaExperience() {
 
         <div className="relative mb-10 hidden h-[500px] overflow-hidden border border-[#C7A15A]/30 bg-[#0B1C26] p-3 lg:block">
           <div className="relative h-full overflow-hidden">
-            <Image src="/Assets/images/aqua-family-play.png" alt="Conceptual Markhor Club aqua experience" fill priority sizes="100vw" className="object-cover" />
+            <Image src="/assets/images/aqua-family-play.png" alt="Conceptual Markhor Club aqua experience" fill priority sizes="100vw" className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#071116] via-[#071116]/20 to-transparent" />
             <div className="absolute inset-x-8 bottom-8 flex items-end justify-between gap-8">
               <div>
@@ -99,7 +99,7 @@ export default function AquaExperience() {
         <div className="lg:hidden">
           <div className="relative h-[320px] overflow-hidden border border-[#C7A15A]/30 bg-[#0B1C26] p-2">
             <div className="relative h-full overflow-hidden">
-              <Image src="/Assets/images/aqua-family-play.png" alt="Conceptual Markhor Club aqua experience" fill sizes="100vw" className="object-cover" />
+              <Image src="/assets/images/aqua-family-play.png" alt="Conceptual Markhor Club aqua experience" fill sizes="100vw" className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#071116] via-transparent to-transparent" />
               <div className="absolute bottom-5 left-5 right-5">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#D6B978]">Resort pools &amp; family leisure</span>

@@ -9,13 +9,13 @@ import ConceptDisclaimer from '../ui/ConceptDisclaimer'
 type GalleryItem = { category: string; title: string; image: string; alt: string; conceptual?: boolean }
 
 const ITEMS: GalleryItem[] = [
-  { category: 'Destination', title: 'Khanpur Dam Panorama', image: '/Assets/images/Dam View 1.jpg', alt: 'Khanpur Dam destination panorama' },
-  { category: 'Arrival', title: 'Architectural Approach', image: '/Assets/images/Entrance.png', alt: 'Conceptual Markhor Club arrival approach', conceptual: true },
-  { category: 'Dining', title: 'Signature Restaurant', image: '/Assets/images/Dining.png', alt: 'Conceptual Markhor Club dining environment', conceptual: true },
-  { category: 'Wellness', title: 'Hydrotherapy Jacuzzi', image: '/Assets/images/Jakuzi 1.jpg', alt: 'Conceptual jacuzzi and wellness environment', conceptual: true },
-  { category: 'Equestrian', title: 'Riding in the Open Air', image: '/Assets/images/horse riding 2.png', alt: 'Conceptual equestrian experience', conceptual: true },
-  { category: 'Water', title: 'Open Water Boating', image: '/Assets/images/Boating 1.png', alt: 'Conceptual boating experience at Khanpur Dam', conceptual: true },
-  { category: 'Family Leisure', title: 'Aqua Play for Every Age', image: '/Assets/images/Swiming Pool.jpg', alt: 'Conceptual family aqua play experience', conceptual: true },
+  { category: 'Destination', title: 'Khanpur Dam Panorama', image: '/assets/images/Dam View 1.jpg', alt: 'Khanpur Dam destination panorama' },
+  { category: 'Arrival', title: 'Architectural Approach', image: '/assets/images/Entrance.png', alt: 'Conceptual Markhor Club arrival approach', conceptual: true },
+  { category: 'Dining', title: 'Signature Restaurant', image: '/assets/images/Dining.png', alt: 'Conceptual Markhor Club dining environment', conceptual: true },
+  { category: 'Wellness', title: 'Hydrotherapy Jacuzzi', image: '/assets/images/Jakuzi 1.jpg', alt: 'Conceptual jacuzzi and wellness environment', conceptual: true },
+  { category: 'Equestrian', title: 'Riding in the Open Air', image: '/assets/images/horse riding 2.png', alt: 'Conceptual equestrian experience', conceptual: true },
+  { category: 'Water', title: 'Open Water Boating', image: '/assets/images/Boating 1.png', alt: 'Conceptual boating experience at Khanpur Dam', conceptual: true },
+  { category: 'Family Leisure', title: 'Aqua Play for Every Age', image: '/assets/images/Swiming Pool.jpg', alt: 'Conceptual family aqua play experience', conceptual: true },
 ]
 
 function GalleryFrame({ item, index, className = '', onOpen }: { item: GalleryItem; index: number; className?: string; onOpen: (index: number) => void }) {
