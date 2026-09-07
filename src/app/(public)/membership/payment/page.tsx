@@ -24,7 +24,9 @@ export default function MembershipPaymentSubmissionPage() {
   const [inquiryReference, setInquiryReference] = useState('')
   const [amount, setAmount] = useState('500000')
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer')
-  const [providerName, setProviderName] = useState('Meezan Bank')
+  const [providerName, setProviderName] = useState('Easypaisa')
+  const [destinationAccountId, setDestinationAccountId] = useState('')
+  const [paymentAccounts, setPaymentAccounts] = useState<any[]>([])
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [transactionReference, setTransactionReference] = useState('')
   const [remarks, setRemarks] = useState('')
@@ -34,6 +36,22 @@ export default function MembershipPaymentSubmissionPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successData, setSuccessData] = useState<any>(null)
+
+  React.useEffect(() => {
+    fetch('/api/payment-accounts')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.accounts)) {
+          setPaymentAccounts(data.accounts)
+          if (data.accounts.length > 0) {
+            setDestinationAccountId(data.accounts[0].id)
+            setProviderName(data.accounts[0].provider)
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -72,6 +90,7 @@ export default function MembershipPaymentSubmissionPage() {
       formData.append('amount', amount)
       formData.append('paymentMethod', paymentMethod)
       formData.append('providerName', providerName)
+      formData.append('destinationAccountId', destinationAccountId)
       formData.append('paymentDate', paymentDate)
       formData.append('transactionReference', transactionReference)
       formData.append('remarks', remarks)
@@ -131,27 +150,29 @@ export default function MembershipPaymentSubmissionPage() {
           <div className="flex items-center gap-3 border-b border-[#C7A15A]/20 pb-3">
             <Building2 className="w-5 h-5 text-[#C7A15A]" />
             <div>
-              <h2 className="text-sm font-serif font-semibold text-[#F4F0E8]">Markhor Group Official Collection Account</h2>
-              <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider">Direct Bank Transfer Credentials</p>
+              <h2 className="text-sm font-serif font-semibold text-[#F4F0E8]">Markhor Club Official Payment Destinations</h2>
+              <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider">Authorized Bank & Wallet Accounts</p>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-            <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/15">
-              <span className="text-[10px] text-[#F4F0E8]/50 uppercase block">Bank Name</span>
-              <span className="font-bold text-[#F4F0E8]">Meezan Bank Limited</span>
-            </div>
-            <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/15">
-              <span className="text-[10px] text-[#F4F0E8]/50 uppercase block">Account Title</span>
-              <span className="font-bold text-[#D6B978]">MARKHOR GROUP PVT LTD</span>
-            </div>
-            <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/15">
-              <span className="text-[10px] text-[#F4F0E8]/50 uppercase block">Account Number</span>
-              <span className="font-bold text-[#C7A15A]">01020304050607</span>
-            </div>
-            <div className="p-3 rounded-xl bg-[#071116] border border-[#C7A15A]/15">
-              <span className="text-[10px] text-[#F4F0E8]/50 uppercase block">IBAN Number</span>
-              <span className="font-bold text-[#C7A15A]">PK36MEZN0001020304050607</span>
-            </div>
+            {paymentAccounts.length > 0 ? (
+              paymentAccounts.map((acc: any) => (
+                <div key={acc.id} className="p-4 rounded-xl bg-[#071116] border border-[#C7A15A]/20 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-[#C7A15A] uppercase font-bold">{acc.provider}</span>
+                    <span className="text-[9px] text-[#F4F0E8]/40">{acc.currency || 'PKR'}</span>
+                  </div>
+                  <div className="text-[#F4F0E8] font-bold text-sm">{acc.accountTitle}</div>
+                  <div className="text-[#D6B978] font-mono text-sm tracking-wider">{acc.accountNumber}</div>
+                  {acc.iban && <div className="text-[10px] text-[#F4F0E8]/50">IBAN: {acc.iban}</div>}
+                  {acc.description && <div className="text-[10px] text-[#F4F0E8]/35 pt-1 italic">{acc.description}</div>}
+                </div>
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-4 text-xs text-[#F4F0E8]/50">
+                Loading authorized payment destinations…
+              </div>
+            )}
           </div>
         </div>
 
@@ -304,16 +325,24 @@ export default function MembershipPaymentSubmissionPage() {
 
                 <div>
                   <label className="block text-[10px] font-semibold text-[#D6B978] uppercase tracking-widest mb-1.5">
-                    Bank / Provider Name *
+                    Destination Account *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={providerName}
-                    onChange={(e) => setProviderName(e.target.value)}
-                    placeholder="Meezan, HBL, JazzCash"
+                  <select
+                    value={destinationAccountId}
+                    onChange={(e) => {
+                      const id = e.target.value
+                      setDestinationAccountId(id)
+                      const sel = paymentAccounts.find((a: any) => a.id === id)
+                      if (sel) setProviderName(sel.provider)
+                    }}
                     className="w-full bg-[#071116] border border-[#C7A15A]/30 rounded-xl px-4 py-3 text-sm text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
-                  />
+                  >
+                    {paymentAccounts.map((acc: any) => (
+                      <option key={acc.id} value={acc.id}>
+                        {acc.provider} — {acc.accountNumber} ({acc.accountTitle})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

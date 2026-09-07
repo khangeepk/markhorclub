@@ -51,6 +51,7 @@ export async function GET() {
 
     // 2. Inquiries & Visit Bookings
     const inquiries = await db.membershipInquiry.findMany({
+      where: { deletedAt: null },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -113,6 +114,25 @@ export async function GET() {
     // 11. Voice Diagnostics
     const voiceDiagnostics = getAudioManifestDiagnostics()
 
+    const pendingVerificationCount = paymentSubmissions.filter((s: any) => s.verificationStatus === 'PENDING_VERIFICATION' || s.verificationStatus === 'SUBMITTED').length
+    const verifiedTodayCount = paymentSubmissions.filter((s: any) => s.verificationStatus === 'VERIFIED' || s.verificationStatus === 'MANUALLY_VERIFIED').length
+    const duplicateCount = paymentSubmissions.filter((s: any) => s.verificationStatus === 'DUPLICATE').length
+    const rejectedCount = paymentSubmissions.filter((s: any) => s.verificationStatus === 'REJECTED').length
+
+    // 12. Branding Settings
+    const brandingSettingsRows = await db.appSetting.findMany({
+      where: { key: { in: ['brand_logo_url', 'brand_emblem_url', 'brand_login_logo_url'] } },
+    })
+
+    const brandingSettings: Record<string, string> = {
+      brand_logo_url: '/assets/logos/markhor-logo-gold.png',
+      brand_emblem_url: '/assets/logos/markhor-logo-gold.png',
+      brand_login_logo_url: '/assets/logos/markhor-logo-gold.png',
+    }
+    for (const b of brandingSettingsRows) {
+      if (b.value) brandingSettings[b.key] = b.value
+    }
+
     return NextResponse.json({
       success: true,
       currentUser: session,
@@ -126,6 +146,10 @@ export async function GET() {
         totalIncome,
         totalExpenses,
         netResult,
+        pendingVerificationCount,
+        verifiedTodayCount,
+        duplicateCount,
+        rejectedCount,
       },
       members: formattedMembers,
       inquiries,
@@ -140,6 +164,7 @@ export async function GET() {
       auditLogs,
       pipelineConfig,
       voiceDiagnostics,
+      brandingSettings,
     })
   } catch (error: any) {
     return NextResponse.json(

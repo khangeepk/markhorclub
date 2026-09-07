@@ -1,13 +1,12 @@
 'use client'
 
 import Image from 'next/image'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Volume2, VolumeX } from 'lucide-react'
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -17,16 +16,18 @@ import gsap from 'gsap'
 const INTRO_VIDEO_PATH = '/assets/video/markhor-intro.mp4'
 const INTRO_POSTER_PATH = '/assets/video/markhor-intro-poster.jpg'
 
-type IntroStatus = 'pending' | 'active' | 'exiting' | 'complete'
+export type IntroStatus = 'loading' | 'playing' | 'exiting' | 'complete'
 
 type CinematicIntroContextValue = {
   introComplete: boolean
   introActive: boolean
+  status: IntroStatus
 }
 
 const CinematicIntroContext = createContext<CinematicIntroContextValue>({
   introComplete: true,
   introActive: false,
+  status: 'complete',
 })
 
 export function useCinematicIntro() {
@@ -34,7 +35,7 @@ export function useCinematicIntro() {
 }
 
 function prefersReducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
 export default function CinematicIntroProvider({
@@ -44,168 +45,237 @@ export default function CinematicIntroProvider({
 }) {
   const pathname = usePathname()
   const isHome = pathname === '/'
-  const [status, setStatus] = useState<IntroStatus>(isHome ? 'pending' : 'complete')
-  const [introComplete, setIntroComplete] = useState(!isHome)
+
+  const [status, setStatus] = useState<IntroStatus>('loading')
+  const [introComplete, setIntroComplete] = useState<boolean>(false)
   const [progress, setProgress] = useState(0)
+  const [isMuted, setIsMuted] = useState(false)
+
   const overlayRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const veilRef = useRef<HTMLDivElement>(null)
   const brandRef = useRef<HTMLDivElement>(null)
-  const statusRef = useRef(status)
+
+  const statusRef = useRef<IntroStatus>('loading')
+  const isExitingRef = useRef<boolean>(false)
   const originalBodyOverflowRef = useRef<string | null>(null)
+  const originalHtmlOverflowRef = useRef<string | null>(null)
+  const originalTouchActionRef = useRef<string | null>(null)
+  const originalOverscrollRef = useRef<string | null>(null)
   const fallbackTimerRef = useRef<number | null>(null)
-  const playAttemptedRef = useRef(false)
+  const gsapTweenRef = useRef<gsap.core.Tween | null>(null)
 
-  const useClientLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
-
-  useClientLayoutEffect(() => {
+  // Keep statusRef in sync
+  useEffect(() => {
     statusRef.current = status
   }, [status])
 
+  // Restore scroll helper
+  const unlockScroll = useCallback(() => {
+    if (typeof document === 'undefined') return
+    document.documentElement.classList.remove('markhor-intro-active')
+
+    if (originalBodyOverflowRef.current !== null) {
+      document.body.style.overflow = originalBodyOverflowRef.current
+      originalBodyOverflowRef.current = null
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    if (originalHtmlOverflowRef.current !== null) {
+      document.documentElement.style.overflow = originalHtmlOverflowRef.current
+      originalHtmlOverflowRef.current = null
+    } else {
+      document.documentElement.style.overflow = ''
+    }
+
+    if (originalTouchActionRef.current !== null) {
+      document.documentElement.style.touchAction = originalTouchActionRef.current
+      originalTouchActionRef.current = null
+    } else {
+      document.documentElement.style.touchAction = ''
+    }
+
+    if (originalOverscrollRef.current !== null) {
+      document.documentElement.style.overscrollBehavior = originalOverscrollRef.current
+      originalOverscrollRef.current = null
+    } else {
+      document.documentElement.style.overscrollBehavior = ''
+    }
+  }, [])
+
+  // Lock scroll helper
   const lockScroll = useCallback(() => {
     if (typeof document === 'undefined') return
-
     if (originalBodyOverflowRef.current === null) {
       originalBodyOverflowRef.current = document.body.style.overflow
+    }
+    if (originalHtmlOverflowRef.current === null) {
+      originalHtmlOverflowRef.current = document.documentElement.style.overflow
+    }
+    if (originalTouchActionRef.current === null) {
+      originalTouchActionRef.current = document.documentElement.style.touchAction
+    }
+    if (originalOverscrollRef.current === null) {
+      originalOverscrollRef.current = document.documentElement.style.overscrollBehavior
     }
 
     document.documentElement.classList.add('markhor-intro-active')
     document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    document.documentElement.style.touchAction = 'none'
+    document.documentElement.style.overscrollBehavior = 'none'
   }, [])
 
-  const unlockScroll = useCallback(() => {
-    if (typeof document === 'undefined') return
+  // Deterministic exit transition
+  const completeIntro = useCallback(
+    (immediate = false) => {
+      if (statusRef.current === 'complete' || isExitingRef.current) return
+      isExitingRef.current = true
 
-    document.documentElement.classList.remove('markhor-intro-active')
-    document.body.style.overflow = originalBodyOverflowRef.current ?? ''
-    originalBodyOverflowRef.current = null
-  }, [])
+      // Clear fail-safe timer
+      if (fallbackTimerRef.current !== null) {
+        window.clearTimeout(fallbackTimerRef.current)
+        fallbackTimerRef.current = null
+      }
 
-  const completeIntro = useCallback((immediate = false) => {
-    if (statusRef.current === 'complete' || statusRef.current === 'exiting') return
+      // Mark seen in sessionStorage (client-side only)
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('markhor_intro_seen', 'true')
+        } catch {
+          // Ignore quota / privacy mode errors
+        }
+      }
 
-    if (fallbackTimerRef.current !== null) {
-      window.clearTimeout(fallbackTimerRef.current)
-      fallbackTimerRef.current = null
-    }
-
-    statusRef.current = 'exiting'
-    setStatus('exiting')
-    setIntroComplete(true)
-
-    const video = videoRef.current
-    const overlay = overlayRef.current
-    const veil = veilRef.current
-    const brand = brandRef.current
-
-    if (immediate) {
-      gsap.killTweensOf([video, overlay, veil, brand].filter(Boolean))
-      video?.pause()
-      statusRef.current = 'complete'
-      setStatus('complete')
+      // Immediately restore body scrolling & announce intro complete to page
+      unlockScroll()
       setIntroComplete(true)
-      unlockScroll()
-      return
-    }
 
-    if (!overlay || !veil || !brand) {
-      statusRef.current = 'complete'
-      setStatus('complete')
-      unlockScroll()
-      return
-    }
+      const video = videoRef.current
+      const overlay = overlayRef.current
 
-    const timeline = gsap.timeline({
-      defaults: { ease: 'power3.inOut' },
-      onComplete: () => {
+      // Stop video audio immediately so ambient music can transition cleanly
+      if (video) {
+        video.muted = true
+      }
+
+      if (immediate || !overlay) {
+        if (gsapTweenRef.current) {
+          gsapTweenRef.current.kill()
+        }
         video?.pause()
         statusRef.current = 'complete'
         setStatus('complete')
-        unlockScroll()
-      },
-    })
+        return
+      }
 
-    if (video) {
-      timeline.to(video, { scale: 1.02, opacity: 0.42, duration: 0.92 }, 0)
+      // Smooth exit transition: set pointer-events none & fade opacity 1 -> 0 over 800ms
+      overlay.style.pointerEvents = 'none'
+      statusRef.current = 'exiting'
+      setStatus('exiting')
+
+      gsapTweenRef.current = gsap.to(overlay, {
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power2.out',
+        onComplete: () => {
+          video?.pause()
+          statusRef.current = 'complete'
+          setStatus('complete')
+          gsapTweenRef.current = null
+        },
+      })
+    },
+    [unlockScroll]
+  )
+
+  // Primary lifecycle initialization
+  useEffect(() => {
+    // Non-home routes, reduced motion, or previously seen session -> skip immediately
+    let hasSeenSession = false
+    if (typeof window !== 'undefined') {
+      try {
+        hasSeenSession = sessionStorage.getItem('markhor_intro_seen') === 'true'
+      } catch {
+        hasSeenSession = false
+      }
     }
 
-    timeline
-      .to(veil, { opacity: 0.34, duration: 0.82 }, 0.08)
-      .to(brand, { opacity: 1, y: 0, duration: 0.5 }, 0.22)
-      .to(overlay, { opacity: 0, duration: 0.72, ease: 'power2.inOut' }, 0.52)
-  }, [unlockScroll])
-
-  useClientLayoutEffect(() => {
-    if (!isHome) {
+    if (!isHome || prefersReducedMotion() || hasSeenSession) {
+      statusRef.current = 'complete'
       setStatus('complete')
       setIntroComplete(true)
       unlockScroll()
       return
     }
 
-    if (prefersReducedMotion()) {
-      setStatus('complete')
-      setIntroComplete(true)
-      return
-    }
-
-    statusRef.current = 'active'
-    setStatus('active')
+    // Home page fresh session: lock scroll and start playing
+    statusRef.current = 'playing'
+    setStatus('playing')
     lockScroll()
 
-    return unlockScroll
-  }, [isHome, lockScroll, unlockScroll])
+    // Sensible fail-safe timeout: 7.5 seconds max (video is ~5s + 2.5s buffer)
+    const safetyTimer = window.setTimeout(() => {
+      completeIntro(false)
+    }, 7500)
+    fallbackTimerRef.current = safetyTimer
 
+    return () => {
+      if (fallbackTimerRef.current !== null) {
+        window.clearTimeout(fallbackTimerRef.current)
+      }
+      if (gsapTweenRef.current) {
+        gsapTweenRef.current.kill()
+      }
+      unlockScroll()
+    }
+  }, [isHome, lockScroll, unlockScroll, completeIntro])
+
+  // Play video with autoplay restriction fallback handling
   useEffect(() => {
-    if (status !== 'active') return
+    if (status !== 'playing') return
 
     const video = videoRef.current
     if (!video) return
 
-    playAttemptedRef.current = false
-    let retryTimer: number | null = null
-
-    const attemptPlayback = () => {
-      if (video.readyState < 1 || playAttemptedRef.current || video.ended) return
-
-      // Keep autoplay policy-compatible even if a browser drops the HTML
-      // attributes while hydrating the media element.
-      video.muted = true
-      video.defaultMuted = true
-      video.playsInline = true
-      playAttemptedRef.current = true
-      void video.play().catch(() => {
-        // Retry once the browser has finished resolving the muted media
-        // request instead of leaving the intro frozen at its poster frame.
-        playAttemptedRef.current = false
-        retryTimer = window.setTimeout(attemptPlayback, 250)
+    const playPromise = video.play()
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn('[Markhor Intro] Unmuted autoplay rejected. Retrying muted:', err)
+        video.muted = true
+        setIsMuted(true)
+        video.play().catch((mutedErr) => {
+          console.warn('[Markhor Intro] Muted autoplay also failed:', mutedErr)
+          // Fall through gracefully to landing page
+          completeIntro(false)
+        })
       })
-    }
-
-    const timeout = window.setTimeout(completeIntro, 7000)
-    fallbackTimerRef.current = timeout
-    video.addEventListener('loadedmetadata', attemptPlayback)
-    video.addEventListener('canplay', attemptPlayback)
-    video.addEventListener('loadeddata', attemptPlayback)
-    attemptPlayback()
-
-    return () => {
-      window.clearTimeout(timeout)
-      if (retryTimer !== null) window.clearTimeout(retryTimer)
-      fallbackTimerRef.current = null
-      video.removeEventListener('loadedmetadata', attemptPlayback)
-      video.removeEventListener('canplay', attemptPlayback)
-      video.removeEventListener('loadeddata', attemptPlayback)
     }
   }, [status, completeIntro])
 
-  useEffect(() => {
-    return () => unlockScroll()
-  }, [unlockScroll])
+  const toggleSound = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    const video = videoRef.current
+    if (!video) return
+    const nextMuted = !isMuted
+    video.muted = nextMuted
+    setIsMuted(nextMuted)
+  }
+
+  const handleOverlayClick = () => {
+    // Visitor click gesture: unmute video if muted
+    const video = videoRef.current
+    if (video && video.muted) {
+      video.muted = false
+      setIsMuted(false)
+    }
+  }
 
   const contextValue = {
     introComplete,
-    introActive: status === 'active' || status === 'exiting',
+    introActive: status === 'playing' || status === 'loading' || status === 'exiting',
+    status,
   }
 
   return (
@@ -215,7 +285,10 @@ export default function CinematicIntroProvider({
       {isHome && status !== 'complete' && (
         <div
           ref={overlayRef}
-          className="markhor-intro fixed inset-0 z-[2000] overflow-hidden bg-[#071116] text-[#F4F0E8] select-none"
+          onClick={handleOverlayClick}
+          className={`markhor-intro fixed inset-0 z-[2000] overflow-hidden bg-[#071116] text-[#F4F0E8] select-none cursor-pointer ${
+            status === 'exiting' ? 'pointer-events-none' : ''
+          }`}
           style={{ position: 'fixed', inset: 0, zIndex: 2000, overflow: 'hidden' }}
           data-intro-status={status}
           data-intro-complete={introComplete ? 'true' : 'false'}
@@ -228,7 +301,6 @@ export default function CinematicIntroProvider({
             src={INTRO_VIDEO_PATH}
             poster={INTRO_POSTER_PATH}
             autoPlay
-            muted
             playsInline
             preload="auto"
             aria-hidden="true"
@@ -238,8 +310,12 @@ export default function CinematicIntroProvider({
                 setProgress(currentVideo.currentTime / currentVideo.duration)
               }
             }}
-            onEnded={() => completeIntro()}
-            onError={() => completeIntro(true)}
+            onEnded={() => completeIntro(false)}
+            onError={() => completeIntro(false)}
+            onStalled={() => {
+              // On stall, wait 1s fallback
+              window.setTimeout(() => completeIntro(false), 1000)
+            }}
           />
 
           <div className="markhor-intro-gradient absolute inset-0 bg-gradient-to-t from-[#071116]/80 via-transparent to-[#071116]/35" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
@@ -267,20 +343,32 @@ export default function CinematicIntroProvider({
             </span>
           </div>
 
-          <button
-            type="button"
-            onPointerDown={() => completeIntro(true)}
-            onClick={(event) => {
-              event.preventDefault()
-              completeIntro(true)
-            }}
-            className="markhor-intro-skip absolute right-5 top-5 inline-flex min-h-11 items-center gap-2 border-b border-[#D6B978]/65 px-1 pb-2 text-[10px] font-medium uppercase tracking-[0.26em] text-[#F4F0E8] transition-colors duration-300 hover:border-[#D6B978] hover:text-[#D6B978] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6B978] focus-visible:ring-offset-4 focus-visible:ring-offset-[#071116] sm:right-10 sm:top-8"
-            style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', minHeight: '2.75rem' }}
-            aria-label="Skip Markhor Club cinematic introduction"
-          >
-            <span>Skip intro</span>
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
+          {/* Action Buttons Top Right: Sound & Skip */}
+          <div className="absolute right-5 top-5 flex items-center gap-3 sm:right-10 sm:top-8 z-10">
+            <button
+              type="button"
+              onClick={toggleSound}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#071116]/80 border border-[#D6B978]/50 text-[10px] font-medium uppercase tracking-widest text-[#F4F0E8] hover:border-[#D6B978] transition-all"
+            >
+              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-[#D6B978] animate-pulse" />}
+              <span>{isMuted ? 'Muted' : 'Sound On'}</span>
+            </button>
+
+            <button
+              type="button"
+              onPointerDown={() => completeIntro(false)}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                completeIntro(false)
+              }}
+              className="markhor-intro-skip inline-flex items-center gap-2 border-b border-[#D6B978]/65 px-1 pb-1.5 text-[10px] font-medium uppercase tracking-[0.26em] text-[#F4F0E8] transition-colors duration-300 hover:border-[#D6B978] hover:text-[#D6B978]"
+              aria-label="Skip Markhor Club cinematic introduction"
+            >
+              <span>Skip intro</span>
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
 
           <div className="markhor-intro-progress absolute bottom-6 left-6 right-6 flex items-center gap-4 sm:left-10 sm:right-10 lg:left-16 lg:right-16" style={{ position: 'absolute', right: '1.5rem', bottom: '1.5rem', left: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div className="markhor-intro-progress-track h-px flex-1 overflow-hidden bg-[#F4F0E8]/20" aria-hidden="true">
@@ -298,3 +386,4 @@ export default function CinematicIntroProvider({
     </CinematicIntroContext.Provider>
   )
 }
+

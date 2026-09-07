@@ -16,6 +16,7 @@ import {
   HelpCircle,
   RefreshCw,
   FileText,
+  FileSpreadsheet,
   Settings,
   ShieldCheck,
   LogOut,
@@ -40,6 +41,69 @@ export default function AdminPortalPage() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<any>(null)
   const [showFullCnic, setShowFullCnic] = useState<Record<string, boolean>>({})
+  // Inquiry Management States
+  const [inquirySearch, setInquirySearch] = useState('')
+  const [inquiryStatusFilter, setInquiryStatusFilter] = useState('')
+  const [inquiryViewArchived, setInquiryViewArchived] = useState(false)
+  const [selectedInquiryDetail, setSelectedInquiryDetail] = useState<any>(null)
+  const [inquiryToDelete, setInquiryToDelete] = useState<any>(null)
+  const [inquiriesData, setInquiriesData] = useState<any[]>([])
+  const [inquiryCounts, setInquiryCounts] = useState<{ active: number; archived: number; total: number }>({ active: 0, archived: 0, total: 0 })
+
+  const fetchInquiries = async () => {
+    try {
+      const query = new URLSearchParams()
+      if (inquiryViewArchived) query.set('showDeleted', 'true')
+      if (inquirySearch) query.set('search', inquirySearch)
+      if (inquiryStatusFilter) query.set('status', inquiryStatusFilter)
+
+      const res = await fetch(`/api/admin/inquiries?${query.toString()}`)
+      const json = await res.json()
+      if (json.success) {
+        setInquiriesData(json.inquiries)
+        setInquiryCounts(json.counts)
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'inquiries') {
+      fetchInquiries()
+    }
+  }, [activeTab, inquiryViewArchived, inquirySearch, inquiryStatusFilter])
+
+  const handleDeleteInquiry = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/inquiries/${id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (json.success) {
+        setInquiryToDelete(null)
+        fetchInquiries()
+        loadData()
+      } else {
+        alert(json.error || 'Failed to delete inquiry')
+      }
+    } catch {
+      alert('Error deleting inquiry')
+    }
+  }
+
+  const handleRestoreInquiry = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/inquiries/${id}/restore`, { method: 'POST' })
+      const json = await res.json()
+      if (json.success) {
+        fetchInquiries()
+        loadData()
+      } else {
+        alert(json.error || 'Failed to restore inquiry')
+      }
+    } catch {
+      alert('Error restoring inquiry')
+    }
+  }
 
   // Modal forms
   const [showMemberModal, setShowMemberModal] = useState(false)
@@ -211,6 +275,7 @@ export default function AdminPortalPage() {
     { id: 'inquiries', label: 'Inquiries', icon: UserCheck, count: data?.inquiries?.length },
     { id: 'members', label: 'Members', icon: Users, count: data?.members?.length },
     { id: 'payment_submissions', label: 'Payment Submissions', icon: FileCheck, count: data?.paymentSubmissions?.filter((s: any) => s.verificationStatus === 'PENDING_VERIFICATION').length || 0 },
+    { id: 'reconciliation', label: 'Bank Reconciliation', icon: FileSpreadsheet, href: '/admin/payment-reconciliation' },
     { id: 'payments', label: 'Payments Ledger', icon: CreditCard },
     { id: 'income', label: 'Income', icon: TrendingUp },
     { id: 'expenses', label: 'Expenses', icon: TrendingDown },
@@ -221,7 +286,7 @@ export default function AdminPortalPage() {
     { id: 'faqs', label: 'FAQs', icon: HelpCircle },
     { id: 'crm', label: 'CRM Sync', icon: RefreshCw },
     { id: 'reports', label: 'Reports', icon: FileText },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/admin/settings' },
     { id: 'audit', label: 'Audit Log', icon: ShieldCheck },
   ]
 
@@ -237,18 +302,20 @@ export default function AdminPortalPage() {
   }
 
   const kpis = data?.kpis || {}
+  const logoUrl = data?.brandingSettings?.brand_logo_url || '/assets/logos/markhor-logo-gold.png'
 
   return (
     <div className="min-h-screen bg-[#071116] text-[#F4F0E8] flex flex-col md:flex-row font-sans relative">
       {/* Mobile Header Bar */}
       <div className="md:hidden flex items-center justify-between p-4 bg-[#0B1C26] border-b border-[#C7A15A]/20 sticky top-0 z-30">
         <div className="flex items-center gap-2">
-          <Image
-            src="/assets/logos/markhor-logo-gold.png"
+          <img
+            src={logoUrl}
             alt="Markhor Club"
-            width={24}
-            height={24}
-            className="object-contain"
+            className="w-6 h-6 object-contain"
+            onError={(e) => {
+              ;(e.target as HTMLImageElement).src = '/assets/logos/markhor-logo-gold.png'
+            }}
           />
           <span className="text-xs font-serif font-bold text-[#F4F0E8] tracking-wider">MARKHOR ADMIN</span>
         </div>
@@ -268,12 +335,13 @@ export default function AdminPortalPage() {
       >
         {/* Brand */}
         <div className="p-6 border-b border-[#C7A15A]/20 flex items-center gap-3">
-          <Image
-            src="/assets/logos/markhor-logo-gold.png"
+          <img
+            src={logoUrl}
             alt="Markhor Club"
-            width={32}
-            height={32}
-            className="object-contain"
+            className="w-8 h-8 object-contain"
+            onError={(e) => {
+              ;(e.target as HTMLImageElement).src = '/assets/logos/markhor-logo-gold.png'
+            }}
           />
           <div>
             <h2 className="text-sm font-serif font-semibold text-[#F4F0E8] tracking-wide">MARKHOR CLUB</h2>
@@ -290,7 +358,11 @@ export default function AdminPortalPage() {
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id)
+                  if ('href' in item && item.href) {
+                    router.push(item.href)
+                  } else {
+                    setActiveTab(item.id)
+                  }
                   setMobileSidebarOpen(false)
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium tracking-wider uppercase transition-all duration-200 ${
@@ -321,7 +393,7 @@ export default function AdminPortalPage() {
         <div className="p-4 border-t border-[#C7A15A]/20 bg-[#071116]/50 flex items-center justify-between">
           <div className="truncate">
             <p className="text-xs font-semibold text-[#F4F0E8] truncate">{data?.currentUser?.fullName || 'Admin'}</p>
-            <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider">Superadmin</p>
+            <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider">{data?.currentUser?.role || 'Admin'}</p>
           </div>
           <button
             onClick={handleLogout}
@@ -457,10 +529,70 @@ export default function AdminPortalPage() {
         {/* TAB 2: INQUIRIES */}
         {activeTab === 'inquiries' && (
           <div className="space-y-6">
+            {/* Control Bar: Subtabs, Search & Filters */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0B1C26] p-4 rounded-2xl border border-[#C7A15A]/20">
+              {/* Active vs Archived Subtabs */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setInquiryViewArchived(false)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition ${
+                    !inquiryViewArchived
+                      ? 'bg-[#C7A15A] text-[#071116] shadow-md'
+                      : 'bg-[#071116] text-[#F4F0E8]/60 border border-[#C7A15A]/20 hover:text-white'
+                  }`}
+                >
+                  Active Inquiries ({inquiryCounts.active})
+                </button>
+                <button
+                  onClick={() => setInquiryViewArchived(true)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider transition flex items-center gap-1.5 ${
+                    inquiryViewArchived
+                      ? 'bg-amber-500 text-[#071116] shadow-md'
+                      : 'bg-[#071116] text-[#F4F0E8]/60 border border-[#C7A15A]/20 hover:text-white'
+                  }`}
+                >
+                  <span>Archived Trash</span>
+                  {inquiryCounts.archived > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-[#071116] text-amber-400">
+                      {inquiryCounts.archived}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Search & Status Filter */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={inquirySearch}
+                  onChange={(e) => setInquirySearch(e.target.value)}
+                  placeholder="Search ref, name, phone, email..."
+                  className="bg-[#071116] border border-[#C7A15A]/30 rounded-xl px-3.5 py-2 text-xs text-[#F4F0E8] placeholder-[#F4F0E8]/40 focus:outline-none focus:border-[#C7A15A] w-56"
+                />
+                <select
+                  value={inquiryStatusFilter}
+                  onChange={(e) => setInquiryStatusFilter(e.target.value)}
+                  className="bg-[#071116] border border-[#C7A15A]/30 rounded-xl px-3 py-2 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#C7A15A]"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="visit_scheduled">Visit Scheduled</option>
+                  <option value="application_submitted">Application Submitted</option>
+                  <option value="converted">Converted</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Inquiries Table */}
             <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
               <div className="p-4 bg-[#071116] border-b border-[#C7A15A]/20 flex justify-between items-center">
-                <h4 className="text-xs font-serif font-semibold text-[#F4F0E8] uppercase tracking-wider">Membership Application Inquiries</h4>
-                <span className="text-[10px] text-[#C7A15A] uppercase">{data?.inquiries?.length || 0} Total</span>
+                <h4 className="text-xs font-serif font-semibold text-[#F4F0E8] uppercase tracking-wider">
+                  {inquiryViewArchived ? 'Archived / Deleted Inquiries' : 'Membership Application Inquiries'}
+                </h4>
+                <span className="text-[10px] text-[#C7A15A] uppercase">{inquiriesData.length} Records Shown</span>
               </div>
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
@@ -472,11 +604,12 @@ export default function AdminPortalPage() {
                     <th className="p-4">Category</th>
                     <th className="p-4">Fee Snapshot</th>
                     <th className="p-4">CRM Sync</th>
-                    <th className="p-4">Action</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#C7A15A]/10">
-                  {data?.inquiries?.map((inq: any) => (
+                  {inquiriesData.map((inq: any) => (
                     <tr key={inq.id} className="hover:bg-white/5 transition-colors">
                       <td className="p-4 font-mono text-[#D6B978]">{inq.referenceNumber}</td>
                       <td className="p-4 font-semibold text-[#F4F0E8]">{inq.fullName}</td>
@@ -492,25 +625,175 @@ export default function AdminPortalPage() {
                         </span>
                       </td>
                       <td className="p-4">
-                        {inq.status !== 'converted' ? (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider font-bold bg-[#071116] text-[#C7A15A] border border-[#C7A15A]/30">
+                          {inq.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => handleConvertInquiry(inq.id)}
-                            className="px-3 py-1 rounded-lg bg-[#C7A15A] text-[#071116] font-semibold text-[10px] uppercase tracking-wider hover:bg-[#D6B978]"
+                            onClick={() => setSelectedInquiryDetail(inq)}
+                            className="px-2.5 py-1 rounded-lg bg-[#071116] border border-[#C7A15A]/30 text-[#C7A15A] font-semibold text-[10px] uppercase tracking-wider hover:border-[#C7A15A]"
                           >
-                            Convert
+                            Details
                           </button>
-                        ) : (
-                          <span className="text-[10px] text-emerald-400 font-bold uppercase">Converted</span>
-                        )}
+
+                          {!inquiryViewArchived ? (
+                            <>
+                              {inq.status !== 'converted' && (
+                                <button
+                                  onClick={() => handleConvertInquiry(inq.id)}
+                                  className="px-2.5 py-1 rounded-lg bg-[#C7A15A] text-[#071116] font-semibold text-[10px] uppercase tracking-wider hover:bg-[#D6B978]"
+                                >
+                                  Convert
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setInquiryToDelete(inq)}
+                                className="px-2.5 py-1 rounded-lg bg-rose-950/60 border border-rose-500/40 text-rose-300 font-semibold text-[10px] uppercase tracking-wider hover:bg-rose-900"
+                              >
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleRestoreInquiry(inq.id)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-semibold text-[10px] uppercase tracking-wider hover:bg-emerald-900"
+                            >
+                              Restore
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {inquiriesData.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="p-8 text-center text-[#F4F0E8]/40">
+                        {inquiryViewArchived ? 'No archived inquiries in trash.' : 'No active inquiries found matching current search/filter.'}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
 
+            {/* Inquiry Details Modal */}
+            {selectedInquiryDetail && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="w-full max-w-lg rounded-2xl bg-[#071116] border border-[#C7A15A]/40 p-6 shadow-2xl space-y-4 text-left">
+                  <div className="flex justify-between items-center border-b border-[#C7A15A]/20 pb-3">
+                    <div>
+                      <h3 className="text-base font-serif font-semibold text-[#F4F0E8]">
+                        Inquiry Details — {selectedInquiryDetail.referenceNumber}
+                      </h3>
+                      <p className="text-[10px] text-[#C7A15A] uppercase tracking-wider">
+                        Submitted: {new Date(selectedInquiryDetail.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedInquiryDetail(null)}
+                      className="p-1 rounded text-[#F4F0E8]/60 hover:text-white"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    <div className="grid grid-cols-2 gap-3 bg-[#0B1C26] p-3 rounded-xl border border-[#C7A15A]/15">
+                      <div>
+                        <span className="block text-[10px] text-[#C7A15A] uppercase">Applicant Name</span>
+                        <span className="font-semibold text-[#F4F0E8]">{selectedInquiryDetail.fullName}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-[#C7A15A] uppercase">Category</span>
+                        <span className="font-semibold text-[#F4F0E8]">{selectedInquiryDetail.membershipCategory}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-[#C7A15A] uppercase">Phone</span>
+                        <span className="font-mono text-[#F4F0E8]">{selectedInquiryDetail.phone}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-[#C7A15A] uppercase">Email</span>
+                        <span className="font-mono text-[#F4F0E8]">{selectedInquiryDetail.email}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-[#C7A15A] uppercase">Fee Snapshot</span>
+                        <span className="font-semibold text-emerald-400">PKR {(selectedInquiryDetail.membershipFeeSnapshotPkr || 500000).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] text-[#C7A15A] uppercase">Status</span>
+                        <span className="font-semibold text-[#C7A15A] uppercase">{selectedInquiryDetail.status}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#0B1C26] p-3 rounded-xl border border-[#C7A15A]/15">
+                      <span className="block text-[10px] text-[#C7A15A] uppercase mb-1">Message / Remarks</span>
+                      <p className="text-[#F4F0E8]/80 leading-relaxed italic">
+                        {selectedInquiryDetail.message || 'No additional message submitted.'}
+                      </p>
+                    </div>
+
+                    <div className="bg-[#0B1C26] p-3 rounded-xl border border-[#C7A15A]/15 grid grid-cols-2 gap-2 text-[10px] font-mono">
+                      <div>
+                        <span className="block text-[#C7A15A]">CRM Contact ID</span>
+                        <span className="text-[#F4F0E8]/70">{selectedInquiryDetail.crmContactId || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[#C7A15A]">CRM Opportunity ID</span>
+                        <span className="text-[#F4F0E8]/70">{selectedInquiryDetail.crmOpportunityId || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      onClick={() => setSelectedInquiryDetail(null)}
+                      className="px-4 py-2 rounded-xl bg-[#C7A15A] text-[#071116] font-bold text-xs uppercase tracking-wider"
+                    >
+                      Close Details
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Soft Delete Confirmation Modal */}
+            {inquiryToDelete && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="w-full max-w-md rounded-2xl bg-[#071116] border border-rose-500/40 p-6 shadow-2xl space-y-4 text-left">
+                  <div className="flex items-center gap-3 text-rose-400">
+                    <AlertTriangle className="w-6 h-6 shrink-0" />
+                    <h3 className="text-base font-serif font-semibold text-[#F4F0E8]">Delete Inquiry?</h3>
+                  </div>
+
+                  <p className="text-xs text-[#F4F0E8]/80 leading-relaxed">
+                    Are you sure you want to delete inquiry <strong className="text-[#D6B978]">{inquiryToDelete.referenceNumber}</strong> ({inquiryToDelete.fullName})?
+                  </p>
+                  <p className="text-[11px] text-[#F4F0E8]/50">
+                    Note: This performs a soft-delete. The inquiry will be moved to the Archived Trash view and can be restored if needed.
+                  </p>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      onClick={() => setInquiryToDelete(null)}
+                      className="px-4 py-2 rounded-xl bg-[#0B1C26] border border-white/10 text-[#F4F0E8]/70 text-xs font-semibold uppercase tracking-wider hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleDeleteInquiry(inquiryToDelete.id)}
+                      className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-rose-500 shadow-lg"
+                    >
+                      Confirm Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* VIP Site Visit Requests Table */}
-            <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden">
+            <div className="rounded-2xl bg-[#0B1C26] border border-[#C7A15A]/20 overflow-hidden mt-6">
               <div className="p-4 bg-[#071116] border-b border-[#C7A15A]/20 flex justify-between items-center">
                 <h4 className="text-xs font-serif font-semibold text-[#F4F0E8] uppercase tracking-wider">VIP Site Visit Requests & Calendar Appointments</h4>
                 <span className="text-[10px] text-[#C7A15A] uppercase">{data?.visitBookings?.length || 0} Total</span>

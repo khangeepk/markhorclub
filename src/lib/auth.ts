@@ -11,7 +11,9 @@ export interface SessionUser {
   username: string
   fullName: string
   email: string
+  phone?: string | null
   role: string
+  permissions?: string | null // JSON array of extra granular permissions
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -55,7 +57,9 @@ export async function verifyAdminSession(): Promise<SessionUser | null> {
       username: user.username,
       fullName: user.fullName,
       email: user.email,
+      phone: user.phone ?? null,
       role: user.role,
+      permissions: user.permissions ?? null,
     }
   } catch {
     return null

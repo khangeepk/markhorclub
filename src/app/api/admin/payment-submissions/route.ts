@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
-import { verifyAdminSession } from '@/lib/auth'
 import { db } from '@/lib/db'
 import crypto from 'crypto'
+import { requirePermission } from '@/lib/rbac'
+import { PERMISSIONS } from '@/lib/permissions'
 
 export async function GET(request: Request) {
   try {
-    const session = await verifyAdminSession()
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, error } = await requirePermission(PERMISSIONS.PAYMENTS_READ)
+    if (error) return error
 
     const { searchParams } = new URL(request.url)
     const statusFilter = searchParams.get('status')
@@ -31,11 +30,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await verifyAdminSession()
-
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, error } = await requirePermission(PERMISSIONS.PAYMENTS_VERIFY)
+    if (error) return error
 
     const body = await request.json()
     const { id, action, verifiedAmount, remarks } = body

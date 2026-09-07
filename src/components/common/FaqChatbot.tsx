@@ -20,6 +20,7 @@ import {
   Globe,
   Clock,
 } from 'lucide-react'
+import { useCinematicIntro } from './CinematicIntro'
 
 interface Message {
   id: string
@@ -30,7 +31,9 @@ interface Message {
 }
 
 export const FaqChatbot: React.FC = () => {
+  const { introComplete } = useCinematicIntro()
   const [isOpen, setIsOpen] = useState(false)
+
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [showOfflineModal, setShowOfflineModal] = useState(false)
@@ -331,6 +334,8 @@ export const FaqChatbot: React.FC = () => {
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER || '+923305230888'
   const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '')
   const liveCsrUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent('Hello Markhor Club, I would like to speak with a Live CSR.')}`
+
+  if (!introComplete) return null
 
   return (
     <>

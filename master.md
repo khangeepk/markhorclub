@@ -1034,13 +1034,150 @@ Created `src/lib/crm/` with:
 - **PRODUCTION DEPLOYMENT**: NOT AUTHORIZED (Awaiting explicit user authorization)
 - **LOCALHOST URL**: `http://localhost:3000`
 
+---
 
+## AG-ADMIN-SETTINGS-13 COMPLETION RECORD & LOCK
 
+- **Status**: COMPLETE & LOCKED
+- **Completion Date**: September 6, 2026
 
+### 1. Key Accomplishments
+- **Schema & Database Upgrade**:
+  - Expanded `AdminUser` model with `phone`, `permissions` (JSON array for granular permissions), `requiresPasswordChange`, `profileImageUrl`, and `AdminSession` relation.
+  - Added `PaymentAccount` model (provider, account title, number, IBAN, branch, verification mode, public display flag).
+  - Executed `prisma db push` cleanly.
+- **RBAC Infrastructure (`src/lib/permissions.ts` & `src/lib/rbac.ts`)**:
+  - Defined 6 role levels: `SUPER_ADMIN`, `ADMIN`, `FINANCE_MANAGER`, `MEMBERSHIP_MANAGER`, `CSR_AGENT`, `VIEW_ONLY`.
+  - Implemented 13 granular permission definitions and server-side verification helper `requirePermission()`.
+  - Enforced server-side RBAC protection on all admin settings API routes.
+- **Settings Module API Routes**:
+  - `GET/PUT /api/admin/settings/club` — Club Profile (Name, Email, Phone, Address, Currency, Default Fee).
+  - `POST /api/admin/settings/password` — Self-service password change with strong password validation (min 8 chars, uppercase, lowercase, number, special char) and audit logging.
+  - `GET/POST /api/admin/settings/users` — Admin User list and user creation with temporary password generation.
+  - `GET/PUT /api/admin/settings/users/[id]` — Single user detail update with last active `SUPER_ADMIN` protection (prevents accidental demotion/disabling).
+  - `POST /api/admin/settings/users/[id]/password` — Super Admin password reset for managed accounts.
+  - `GET/POST/PUT/DELETE /api/admin/settings/payment-accounts` — Payment account CRUD with account number masking in list view and soft-deactivation.
+  - `GET/PUT /api/admin/settings/branding` — Branding configuration management.
+  - `GET/PUT /api/admin/profile` — Self-profile update without self-role escalation.
+- **Admin Settings Frontend Hub & Sub-pages**:
+  - `/admin/settings` — 8-section administrative control center grid.
+  - `/admin/settings/club` — Club Profile configuration form.
+  - `/admin/settings/branding` — Branding asset viewer and configuration.
+  - `/admin/settings/account` — Profile & Change Password tabbed manager.
+  - `/admin/settings/users` — User management table, role badge indicators, temporary password modal, and RBAC matrix reference.
+  - `/admin/settings/users/[id]` — Detailed user editor with granular permission check-boxes.
+  - `/admin/settings/payment-accounts` — Payment Account manager with revealable account numbers and modal forms.
+  - `/admin/settings/security` — Active session security audit viewer and sign-out controls.
 
+---
 
+## AG-PAYMENT-VERIFY-14B COMPLETION RECORD & LOCK
 
+- **Status**: COMPLETE & LOCKED
+- **Completion Date**: September 6, 2026
 
+### 1. Preflight QA & Payment Account Configuration
+- **Admin Settings Preflight**: Verified all 8 settings routes (`/admin/settings`, `/admin/settings/club`, `/admin/settings/branding`, `/admin/settings/account`, `/admin/settings/users`, `/admin/settings/payment-accounts`, `/admin/settings/security`) — 100% PASS.
+- **Configured Payment Destinations**:
+  - **Easypaisa**: Mobile Wallet `00923125116164` (Active, Public)
+  - **UBL**: Account `0511247411492` (Active, Public)
+- **Public Payment Page (`/membership/payment`)**: Dynamically connects to active and public `PaymentAccount` records.
 
+### 2. Proof Storage & Duplicate Protection
+- **Private Evidence Storage**: Uploaded slip attachments (PDF, JPG, PNG max 5MB) saved to `private_uploads/proofs/` with SHA-256 randomized storage keys. Streamed securely via `/api/admin/payment-proof/[key]`.
+- **TID Normalization & Duplicate Protection**: Strips non-alphanumeric characters, upper-cases references, checks existing provider + destination account + TID combinations, and flags duplicates with `DUPLICATE` status.
 
+### 3. Provider Abstraction & Statement Reconciliation
+- **Provider Architecture (`src/lib/payments/providers/`)**: `provider.ts`, `manual.ts`, `easypaisa.ts`, `ubl.ts`, `safepay.ts`, `jazzcash.ts`.
+- **API Status**:
+  - **Easypaisa API**: NOT CONFIGURED (Manual & Statement Reconciliation modes active)
+  - **UBL API**: NOT CONFIGURED (Manual & Statement Reconciliation modes active)
+- **Statement Import & Candidate Matching (`/admin/payment-reconciliation`)**:
+  - CSV Statement Import (`/api/admin/payment-reconciliation/import`) with raw row SHA-256 hashing to prevent duplicate statement rows.
+  - Match Engine Matrix:
+    - `EXACT_MATCH`: Same normalized TID + same amount
+    - `POSSIBLE_MATCH`: Same amount, different TID
+    - `CONFLICT`: Same TID, different amount (amount mismatch)
+    - `NO_MATCH`: Unmatched claim
+
+### 4. Atomic Financial Ledger & Post-Verification Workflow
+- **Atomic Transaction (`prisma.$transaction`)**:
+  1. Updates `PaymentSubmission` status to `VERIFIED`
+  2. Creates official `MembershipPayment` ledger entry (`RCP-2026-XXXX`)
+  3. Recalculates total paid & outstanding balance
+  4. Upgrades member status to `active` and digital card status to `issued` when fee snapshot (PKR 500,000) is satisfied
+  5. Records `AuditLog` entry
+  6. Dispatches payment confirmation email and queues CRM sync.
+
+### 5. Verified Automated Test Suite (Scenarios A, B, C)
+- **Scenario A (Exact Match & Verification)**: PASS (`EXACT_MATCH` -> Receipt `RCP-2026-0002` created -> Status = `active`)
+- **Scenario B (Amount Conflict)**: PASS (`CONFLICT` detected -> Auto-verification blocked)
+- **Scenario C (Duplicate TID Protection)**: PASS (`DUPLICATE` detected -> Double ledger posting blocked)
+
+---
+
+## AG-INTRO-FIX-16 — INTRO → LANDING TRANSITION RECOVERY
+
+- **Status**: COMPLETE
+- **Date**: September 7, 2026
+- **Localhost URL**: `http://localhost:3000`
+
+### 1. Root Cause Analysis
+1. **Body Scroll Lockout Trap**: `lockScroll()` set `document.body.style.overflow = 'hidden'`, but missing synchronous unmounting/unlocking or state machine sync left scroll permanently hidden if GSAP callbacks were skipped.
+2. **Overlay Mounting Trap**: Fixed overlay at `z-[2000]` stayed mounted in DOM without `pointer-events: none`, blocking visitor clicks from reaching the landing page underneath.
+3. **Autoplay Promise Rejections**: Unmuted video autoplay without user interaction failed silently in modern browsers without catching `.play()` rejection, leaving video paused at frame 0.
+4. **Hydration Mismatch**: Inconsistent access to `sessionStorage` during server-side vs client-side render caused hydration state mismatches.
+
+### 2. Corrected Intro Lifecycle & State Machine
+- **Explicit 4-State Lifecycle**: `loading` -> `playing` -> `exiting` -> `complete`.
+- **Overlay Release & Scroll Unlock**: `unlockScroll()` is called immediately upon entering `exiting` state. `pointer-events: none` is applied immediately to overlay.
+- **GSAP Fade & Unmount**: Smooth 800ms GSAP opacity fade from 1 to 0. Overlay unmounts completely from DOM when status reaches `complete`.
+
+### 3. Fail-Safe & Autoplay Fallback Mechanism
+- **Autoplay Error Catching**: Catches `video.play()` promise rejections and retries muted automatically. If muted autoplay fails, falls through gracefully to landing page.
+- **Fail-Safe Timeout**: Max 7.5s safety timer guarantees landing page ALWAYS loads, even on broken media stream or stalled network.
+- **Media Event Listeners**: `onEnded`, `onError`, `onStalled` all invoke deterministic exit sequence.
+
+### 4. Session Behavior & Floating UI Coordination
+- **Session Storage (`markhor_intro_seen`)**: Intro plays once per browser session. Refreshing or internal page navigation checks `sessionStorage` client-side and skips intro cleanly.
+- **Floating UI Coordination**: WhatsApp VIP Concierge button and Ask Markhor Chatbot stay hidden until `introComplete === true`, preventing z-index leaks.
+- **Ambient Music Hand-off**: Background ambient audio starts smoothly post-intro after intro video audio is stopped.
+
+### 5. Verification & Build
+- **Browser QA**: Verified intro play, skip, exit fade, unmount, scroll unlock, Hero reveal, ambient music, floating controls, and `#membership` anchor navigation.
+- **Production Build**: `npm run build` compiled successfully (42/42 static/dynamic pages).
+
+---
+
+## AG-INQUIRY-BRANDING-FIX-17 — INQUIRY VISIBILITY, SOFT DELETE & LIVE BRANDING UPLOAD
+
+- **Status**: COMPLETE
+- **Date**: September 7, 2026
+- **Localhost URL**: `http://localhost:3000`
+
+### 1. Root Cause Analysis — Qaiser Rana Inquiry
+- **Data Pipeline Disconnect**: Qaiser Rana submitted an inquiry via the Markhor VIP Concierge Chatbot (`action: 'leaveMessage'`). The API route (`/api/chat`) created a `ChatConversation` record with status `transferred_to_csr`, but previously did NOT save to the `MembershipInquiry` table.
+- **Admin Query Path**: The Admin Portal queries `MembershipInquiry`. Because the chatbot handler didn't write to `MembershipInquiry`, the record was present in local SQLite `dev.db` under `chat_conversations`, but absent from `membership_inquiries`.
+- **Reconciliation & Prevention**: Executed explicit, audited database reconciliation script (`INQ-2026-QAISER`), converting the local `ChatConversation` into an active `MembershipInquiry`. Updated `/api/chat` so future chatbot inquiries create both `ChatConversation` and `MembershipInquiry` records automatically.
+
+### 2. Inquiry Data Model & Soft-Delete Architecture
+- **Prisma Schema Update**: Added `deletedAt DateTime?` and `deletedBy String?` to `MembershipInquiry`.
+- **Single DB Source & Fresh Queries**: Ensured Admin Inquiry routes (`/api/admin/inquiries`) query `dev.db` dynamically with `export const dynamic = 'force-dynamic'`.
+- **Soft-Delete with Confirmation**: Admin UI provides a "Delete" action with confirmation modal ("Delete this inquiry? It will be moved to archived inquiries."). Deleting sets `deletedAt` and `deletedBy` without hard-deleting database rows.
+- **Trash & Restore View**: Added "Archived Trash" view tab to inspect deleted inquiries and allow authorized admins to "Restore" inquiries back to active view.
+- **Search & Filtering**: Added live search across Reference Number, Applicant Name, Phone, and Email, as well as status filtering.
+- **Audit Logging**: Recorded audit entries for `INQUIRY_CREATED`, `INQUIRY_UPDATED`, `INQUIRY_DELETED`, and `INQUIRY_RESTORED`.
+
+### 3. Live Branding Logo Upload & Storage Architecture
+- **Logo Upload API (`/api/admin/settings/branding/upload`)**:
+  - Requires `settings.manage` RBAC permission.
+  - Enforces server-side validation: MIME types (PNG, JPG, JPEG, WEBP), file size <= 2MB, random storage keys. SVG upload disabled for security.
+  - Stores files in persistent storage (`public/uploads/branding/`) and updates database setting keys (`brand_logo_url`, `brand_emblem_url`, `brand_login_logo_url`).
+  - Storage architecture abstraction tagged as `LOCAL_PERSISTENT_STORAGE` (ready for production S3/Blob providers).
+- **Restore Default API (`/api/admin/settings/branding/restore-default`)**: Restores branding setting back to bundled official Markhor logo asset.
+- **Branding UI & Dynamic Rendering**: Replaced "Logo Upload — Coming Soon" with interactive upload cards, live image previews, upload buttons, and restore default actions. Admin Portal sidebar header and `/admin/login` page dynamically render the updated logo from database settings.
+
+### 4. End-to-End Verification
+- **Automated Inquiry Lifecycle Test**: Verified creation, active listing, soft deletion, removal from active view, appearance in archived trash, and restoration (`test-inquiry-lifecycle.js` passed).
+- **Production Build**: `npm run build` compiled 44/44 static/dynamic routes cleanly.
 

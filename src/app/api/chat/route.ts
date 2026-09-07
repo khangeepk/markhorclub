@@ -33,6 +33,22 @@ export async function POST(request: Request) {
         },
       })
 
+      const referenceNumber = `INQ-2026-${Math.floor(1000 + Math.random() * 9000)}`
+      await db.membershipInquiry.create({
+        data: {
+          referenceNumber,
+          fullName: String(fullName).trim(),
+          email: email ? String(email).trim().toLowerCase() : `${String(phone).replace(/[^0-9+]/g, '')}@markhor.client`,
+          phone: String(phone).trim(),
+          preferredContactMethod: 'whatsapp',
+          membershipCategory: 'Individual Membership (Chat Concierge)',
+          message: String(message).trim(),
+          status: 'new',
+          membershipFeeSnapshotPkr: MEMBERSHIP_CONFIG.feePkr,
+          crmSyncStatus: 'pending',
+        },
+      }).catch((err) => console.error('Failed to save chat inquiry:', err))
+
       // Sync offline message to CRM Sync Jobs
       await db.crmSyncJob.create({
         data: {
@@ -77,6 +93,22 @@ export async function POST(request: Request) {
           },
         },
       })
+
+      const referenceNumber = `INQ-2026-${Math.floor(1000 + Math.random() * 9000)}`
+      await db.membershipInquiry.create({
+        data: {
+          referenceNumber,
+          fullName: String(fullName).trim(),
+          email: email ? String(email).trim().toLowerCase() : `${String(phone).replace(/[^0-9+]/g, '')}@markhor.client`,
+          phone: String(phone).trim(),
+          preferredContactMethod: 'phone',
+          membershipCategory: 'VIP Concierge Callback',
+          message: noteContent,
+          status: 'new',
+          membershipFeeSnapshotPkr: MEMBERSHIP_CONFIG.feePkr,
+          crmSyncStatus: 'pending',
+        },
+      }).catch((err) => console.error('Failed to save callback inquiry:', err))
 
       // Sync callback request to GuaranteedCRM Sync Jobs
       await db.crmSyncJob.create({

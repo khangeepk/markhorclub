@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { createSessionToken, setSessionCookie, verifyPassword } from '@/lib/auth'
+import { createSessionToken, verifyPassword } from '@/lib/auth'
 
 // In-memory rate limiting map for admin login (IP/key -> { count, resetAt })
 const loginAttempts = new Map<string, { count: number; resetAt: number }>()
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       data: { lastLoginAt: new Date() },
     })
 
-    // Create session token and set HTTP-only cookie
+    // Create session token and set HTTP-only cookie on the response
     const token = createSessionToken({
       id: user.id,
       username: user.username,
@@ -111,8 +111,6 @@ export async function POST(request: Request) {
       email: user.email,
       role: user.role,
     })
-
-    setSessionCookie(token)
 
     // Log audit
     await db.auditLog.create({
@@ -125,7 +123,7 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Login successful.',
       user: {
@@ -134,6 +132,17 @@ export async function POST(request: Request) {
         role: user.role,
       },
     })
+
+    // Set cookie directly on response (cookies().set() silently fails in Route Handlers)
+    response.cookies.set('markhor_admin_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 12 * 60 * 60, // 12 hours
+    })
+
+    return response
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error?.message || 'Authentication error.' },

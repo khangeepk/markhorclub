@@ -2,12 +2,16 @@
 
 import React from 'react'
 import { MessageCircle } from 'lucide-react'
+import { useCinematicIntro } from './CinematicIntro'
 
 export const WhatsAppButton: React.FC = () => {
+  const { introComplete } = useCinematicIntro()
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER || '+923305230888'
   const cleanNumber = whatsappNumber.replace(/[^0-9]/g, '')
   const message = 'Hello Markhor Club, I would like information about membership.'
   const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`
+
+  if (!introComplete) return null
 
   return (
     <a
@@ -30,3 +34,4 @@ export const WhatsAppButton: React.FC = () => {
     </a>
   )
 }
+

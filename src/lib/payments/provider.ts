@@ -3,6 +3,7 @@ import { ManualTransferProvider } from './manual-transfer'
 import { SafepayProvider } from './safepay'
 import { JazzCashProvider } from './jazzcash'
 import { EasyPaisaProvider } from './easypaisa'
+import { UBLProvider } from './ubl'
 
 export class PaymentProviderRegistry {
   private providers = new Map<string, IPaymentProvider>()
@@ -12,6 +13,7 @@ export class PaymentProviderRegistry {
     this.register(new SafepayProvider())
     this.register(new JazzCashProvider())
     this.register(new EasyPaisaProvider())
+    this.register(new UBLProvider())
   }
 
   register(provider: IPaymentProvider) {

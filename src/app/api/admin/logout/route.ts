@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import { clearSessionCookie, verifyAdminSession } from '@/lib/auth'
+import { verifyAdminSession } from '@/lib/auth'
 import { db } from '@/lib/db'
+
+const COOKIE_NAME = 'markhor_admin_session'
 
 export async function POST() {
   try {
@@ -16,14 +18,30 @@ export async function POST() {
       }).catch(() => {})
     }
 
-    clearSessionCookie()
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully.',
     })
+
+    // Clear cookie directly on response
+    response.cookies.set(COOKIE_NAME, '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    })
+
+    return response
   } catch (error: any) {
-    clearSessionCookie()
-    return NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true })
+    response.cookies.set(COOKIE_NAME, '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    })
+    return response
   }
 }

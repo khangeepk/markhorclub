@@ -15,7 +15,8 @@ export async function POST(request: Request) {
     const inquiryReference = (formData.get('inquiryReference') as string || '').trim()
     const amountStr = formData.get('amount') as string || '0'
     const paymentMethod = (formData.get('paymentMethod') as string || 'bank_transfer').trim()
-    const providerName = (formData.get('providerName') as string || 'Meezan Bank').trim()
+    const providerName = (formData.get('providerName') as string || 'Easypaisa').trim()
+    const destinationAccountId = (formData.get('destinationAccountId') as string || '').trim()
     const paymentDateStr = formData.get('paymentDate') as string || new Date().toISOString()
     const rawTid = (formData.get('transactionReference') as string || '').trim()
     const remarks = (formData.get('remarks') as string || '').trim()
@@ -100,6 +101,7 @@ export async function POST(request: Request) {
         amount,
         paymentMethod,
         providerName,
+        destinationAccountId: destinationAccountId || null,
         paymentDate: new Date(paymentDateStr),
         transactionReference,
         proofStorageKey,

@@ -10,18 +10,57 @@ datasource db {
 }
 
 model AdminUser {
-  id            String    @id @default(uuid())
-  username      String    @unique
-  passwordHash  String
-  fullName      String
-  email         String
-  role          String    @default("admin") // admin, superadmin, finance, support
-  isActive      Boolean   @default(true)
-  lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  username              String    @unique
+  passwordHash          String
+  fullName              String
+  email                 String
+  phone                 String?
+  role                  String    @default("admin") // SUPER_ADMIN, ADMIN, FINANCE_MANAGER, MEMBERSHIP_MANAGER, CSR_AGENT, VIEW_ONLY
+  permissions           String?   // JSON array of extra granular permissions
+  isActive              Boolean   @default(true)
+  requiresPasswordChange Boolean  @default(false)
+  lastLoginAt           DateTime?
+  profileImageUrl       String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  sessions              AdminSession[]
 
   @@map("admin_users")
+}
+
+model AdminSession {
+  id          String    @id @default(uuid())
+  adminId     String
+  admin       AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  token       String    @unique
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  @@map("admin_sessions")
+}
+
+model PaymentAccount {
+  id                    String   @id @default(uuid())
+  provider              String   // Easypaisa, JazzCash, UBL, Meezan, HBL, etc.
+  accountTitle          String
+  accountNumber         String   // Wallet or account number
+  iban                  String?
+  branch                String?
+  currency              String   @default("PKR")
+  isActive              Boolean  @default(true)
+  displayOnPublicPage   Boolean  @default(false)
+  verificationMode      String   @default("MANUAL") // MANUAL, STATEMENT_RECONCILIATION, API_WEBHOOK
+  description           String?
+  createdBy             String   @default("system")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("payment_accounts")
 }
 
 model Member {
@@ -66,6 +105,8 @@ model MembershipInquiry {
   crmOpportunityId        String?
   crmSyncStatus           String    @default("pending") // pending, processing, synced, failed
   crmSyncError            String?
+  deletedAt               DateTime?
+  deletedBy               String?
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -281,6 +322,7 @@ model PaymentSubmission {
   email                 String
   membershipNumber      String?
   inquiryReference      String?
+  destinationAccountId  String?
   amount                Float
   currency              String    @default("PKR")
   paymentMethod         String    @default("bank_transfer") // bank_transfer, jazzcash, easypaisa, card, online
@@ -288,12 +330,15 @@ model PaymentSubmission {
   paymentDate           DateTime  @default(now())
   transactionReference  String    // TID / Ref Number (normalized for duplicate check)
   proofStorageKey       String?   // Secure private storage key
+  receiptHash           String?   // Hash of uploaded slip file
   remarks               String?
-  verificationStatus    String    @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, AUTO_VERIFIED, MANUALLY_VERIFIED, NEEDS_INFORMATION, REJECTED, DUPLICATE
-  verificationMethod    String?   // manual, webhook, provider_api
+  verificationStatus    String    @default("PENDING_VERIFICATION") // SUBMITTED, PENDING_VERIFICATION, AUTO_MATCHED, MANUALLY_VERIFIED, VERIFIED, NEEDS_INFORMATION, REJECTED, DUPLICATE
+  verificationMethod    String?   // manual, webhook, statement_reconciliation
   verifiedAmount        Float?
   verifiedAt            DateTime?
   verifiedBy            String?
+  matchedTransactionId  String?
+  rejectionReason       String?
   providerTransactionId String?
   providerStatus        String?
   createdAt             DateTime  @default(now())
@@ -301,5 +346,23 @@ model PaymentSubmission {
 
   @@index([transactionReference, providerName])
   @@map("payment_submissions")
+}
+
+model PaymentProviderTransaction {
+  id                    String   @id @default(uuid())
+  provider              String   // Easypaisa, JazzCash, UBL, Meezan, etc.
+  destinationAccountId  String?
+  externalTransactionId String   // Bank TID / Ref
+  transactionDate       DateTime @default(now())
+  amount                Float
+  currency              String   @default("PKR")
+  direction             String   @default("CREDIT") // CREDIT, DEBIT
+  description           String?
+  sourceImportId        String?
+  rawRowHash            String?  @unique
+  createdAt             DateTime @default(now())
+
+  @@index([provider, externalTransactionId])
+  @@map("payment_provider_transactions")
 }
 

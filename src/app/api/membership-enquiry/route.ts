@@ -94,12 +94,13 @@ export async function POST(request: Request) {
       })
     } catch (dbErr) {
       console.error('Failed to write inquiry to local DB:', dbErr)
-      // Fallback in-memory response if DB write encounters transient issue
-      return NextResponse.json({
-        success: true,
-        referenceNumber,
-        message: 'Thank you for your inquiry. Your request has been logged successfully.',
-      })
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unable to save your enquiry to our system database. Please try again or call us at ' + MEMBERSHIP_CONFIG.uanPhone,
+        },
+        { status: 500 }
+      )
     }
 
     // 4. GuaranteedCRM Sync (Non-blocking: failure will never lose local inquiry)

@@ -12,6 +12,18 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState('/assets/logos/markhor-logo-gold.png')
+
+  React.useEffect(() => {
+    fetch('/api/admin/settings/branding')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.settings?.brand_login_logo_url) {
+          setLogoUrl(json.settings.brand_login_logo_url)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,13 +65,13 @@ export default function AdminLoginPage() {
         {/* Header Branding */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#C7A15A]/10 border border-[#C7A15A]/40 mb-4 text-[#C7A15A]">
-            <Image
-              src="/assets/logos/markhor-logo-gold.png"
+            <img
+              src={logoUrl}
               alt="Markhor Club Logo"
-              width={40}
-              height={40}
-              className="object-contain"
-              priority
+              className="w-10 h-10 object-contain"
+              onError={(e) => {
+                ;(e.target as HTMLImageElement).src = '/assets/logos/markhor-logo-gold.png'
+              }}
             />
           </div>
           <h1 className="text-2xl font-serif font-bold text-[#F4F0E8] tracking-wider uppercase">

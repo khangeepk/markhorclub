@@ -11,6 +11,7 @@ import { useCinematicIntro } from '../common/CinematicIntro'
 
 export default function Hero() {
   const { introComplete } = useCinematicIntro()
+  const [showHero, setShowHero] = React.useState(introComplete)
   const containerRef = useRef<HTMLDivElement>(null)
   const eyebrowRef = useRef<HTMLDivElement>(null)
   const headlineLine1Ref = useRef<HTMLSpanElement>(null)
@@ -21,6 +22,15 @@ export default function Hero() {
   const footerRef = useRef<HTMLDivElement>(null)
 
   const hasAnimatedRef = useRef(false)
+
+  React.useEffect(() => {
+    if (introComplete) {
+      setShowHero(true)
+    } else {
+      const timer = setTimeout(() => setShowHero(true), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [introComplete])
 
   useLayoutEffect(() => {
     if (!introComplete || hasAnimatedRef.current) return
@@ -88,7 +98,7 @@ export default function Hero() {
       ref={containerRef}
       id="hero"
       className="relative w-full h-[100svh] min-h-[650px] flex flex-col justify-between overflow-hidden bg-[#071116] text-[#F4F0E8] select-none"
-      style={{ visibility: introComplete ? 'visible' : 'hidden' }}
+      style={{ visibility: showHero || introComplete ? 'visible' : 'hidden' }}
     >
       {/* Background Destination Media Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none">
