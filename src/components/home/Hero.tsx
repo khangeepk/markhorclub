@@ -10,7 +10,7 @@ import ScrollIndicator from '../ui/ScrollIndicator'
 import { useCinematicIntro } from '../common/CinematicIntro'
 
 export default function Hero() {
-  const { introComplete } = useCinematicIntro()
+  const { introComplete, replayIntro } = useCinematicIntro()
   const [showHero, setShowHero] = React.useState(introComplete)
   const containerRef = useRef<HTMLDivElement>(null)
   const eyebrowRef = useRef<HTMLDivElement>(null)
@@ -169,13 +169,14 @@ export default function Hero() {
             </Link>
 
             {/* Secondary CTA */}
-            <Link
-              href="#contact"
+            <button
+              type="button"
+              onClick={() => replayIntro()}
               className="group inline-flex items-center justify-center gap-3 px-7 py-4 rounded-sm border border-[#C7A15A]/60 text-[#F4F0E8] bg-transparent hover:bg-[#C7A15A]/10 hover:border-[#C7A15A] hover:text-[#D6B978] transition-all duration-300 min-h-[48px] font-sans font-semibold text-xs tracking-[0.15em] uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C7A15A]"
             >
               <FileText className="w-4 h-4 text-[#C7A15A]" />
               <span>WATCH OUR STORY</span>
-            </Link>
+            </button>
           </div>
 
           {/* Location Microcopy */}

@@ -24,12 +24,14 @@ type CinematicIntroContextValue = {
   introComplete: boolean
   introActive: boolean
   status: IntroStatus
+  replayIntro: () => void
 }
 
 const CinematicIntroContext = createContext<CinematicIntroContextValue>({
   introComplete: true,
   introActive: false,
   status: 'complete',
+  replayIntro: () => {},
 })
 
 export function useCinematicIntro() {
@@ -307,10 +309,32 @@ export default function CinematicIntroProvider({
     }
   }
 
+  const replayIntro = useCallback(() => {
+    isExitingRef.current = false
+    setIntroComplete(false)
+    setStatus('playing')
+    statusRef.current = 'playing'
+    setIsMuted(false)
+    lockScroll()
+
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0
+      videoRef.current.muted = false
+      videoRef.current.play().catch(() => {
+        if (videoRef.current) {
+          videoRef.current.muted = true
+          setIsMuted(true)
+          videoRef.current.play().catch(() => completeIntro(false))
+        }
+      })
+    }
+  }, [lockScroll, completeIntro])
+
   const contextValue = {
     introComplete,
     introActive: status === 'playing' || status === 'loading' || status === 'exiting',
     status,
+    replayIntro,
   }
 
   return (
@@ -383,6 +407,18 @@ export default function CinematicIntroProvider({
               KHANPUR DAM • KPK
             </span>
           </div>
+
+          {/* Center Sound Prompt Banner when muted */}
+          {isMuted && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#071116]/85 border border-[#D6B978]/60 shadow-[0_0_30px_rgba(214,185,120,0.25)] backdrop-blur-md animate-pulse">
+                <Volume2 className="w-4 h-4 text-[#D6B978]" />
+                <span className="text-xs font-medium uppercase tracking-[0.22em] text-[#F4F0E8]">
+                  Tap anywhere to enable sound & voice
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons Top Right: Sound & Skip */}
           <div className="absolute right-5 top-5 flex items-center gap-3 sm:right-10 sm:top-8 z-10">
