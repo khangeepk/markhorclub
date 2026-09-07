@@ -10,11 +10,13 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import gsap from 'gsap'
 
-const INTRO_VIDEO_PATH = '/assets/video/markhor-intro.mp4'
-const INTRO_POSTER_PATH = '/assets/video/markhor-intro-poster.jpg'
+const INTRO_VIDEO_PRIMARY = '/assets/video/markhor-intro.mp4'
+const INTRO_VIDEO_ALT = '/Assets/video/markhor-intro.mp4'
+const INTRO_POSTER_PRIMARY = '/assets/video/markhor-intro-poster.jpg'
+const INTRO_POSTER_ALT = '/Assets/video/markhor-intro-poster.jpg'
 
 export type IntroStatus = 'loading' | 'playing' | 'exiting' | 'complete'
 
@@ -44,12 +46,14 @@ export default function CinematicIntroProvider({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const isHome = pathname === '/'
+  const forceReplay = searchParams?.get('intro') === 'true' || searchParams?.get('replay') === '1'
 
   const [status, setStatus] = useState<IntroStatus>('loading')
   const [introComplete, setIntroComplete] = useState<boolean>(false)
   const [progress, setProgress] = useState(0)
-  const [isMuted, setIsMuted] = useState(false)
+  const [isMuted, setIsMuted] = useState(true)
 
   const overlayRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -192,7 +196,7 @@ export default function CinematicIntroProvider({
 
   // Primary lifecycle initialization
   useEffect(() => {
-    // Non-home routes, reduced motion, or previously seen session -> skip immediately
+    // Non-home routes, reduced motion, or previously seen session -> skip immediately unless forced
     let hasSeenSession = false
     if (typeof window !== 'undefined') {
       try {
@@ -202,7 +206,7 @@ export default function CinematicIntroProvider({
       }
     }
 
-    if (!isHome || prefersReducedMotion() || hasSeenSession) {
+    if (!isHome || prefersReducedMotion() || (hasSeenSession && !forceReplay)) {
       statusRef.current = 'complete'
       setStatus('complete')
       setIntroComplete(true)
@@ -215,10 +219,10 @@ export default function CinematicIntroProvider({
     setStatus('playing')
     lockScroll()
 
-    // Sensible fail-safe timeout: 7.5 seconds max (video is ~5s + 2.5s buffer)
+    // Safety fallback: 25 seconds max (video is ~15-20s max, allows for network buffer)
     const safetyTimer = window.setTimeout(() => {
       completeIntro(false)
-    }, 7500)
+    }, 25000)
     fallbackTimerRef.current = safetyTimer
 
     return () => {
@@ -230,29 +234,29 @@ export default function CinematicIntroProvider({
       }
       unlockScroll()
     }
-  }, [isHome, lockScroll, unlockScroll, completeIntro])
+  }, [isHome, forceReplay, lockScroll, unlockScroll, completeIntro])
 
-  // Play video with autoplay restriction fallback handling
+  // Play video with auto-start guarantee (muted first)
   useEffect(() => {
     if (status !== 'playing') return
 
     const video = videoRef.current
     if (!video) return
 
+    video.muted = isMuted
     const playPromise = video.play()
     if (playPromise !== undefined) {
       playPromise.catch((err) => {
-        console.warn('[Markhor Intro] Unmuted autoplay rejected. Retrying muted:', err)
+        console.warn('[Markhor Intro] Autoplay rejected, enforcing muted autoplay:', err)
         video.muted = true
         setIsMuted(true)
         video.play().catch((mutedErr) => {
-          console.warn('[Markhor Intro] Muted autoplay also failed:', mutedErr)
-          // Fall through gracefully to landing page
+          console.error('[Markhor Intro] All video play attempts failed:', mutedErr)
           completeIntro(false)
         })
       })
     }
-  }, [status, completeIntro])
+  }, [status, isMuted, completeIntro])
 
   const toggleSound = (e?: React.MouseEvent) => {
     e?.stopPropagation()
@@ -264,11 +268,25 @@ export default function CinematicIntroProvider({
   }
 
   const handleOverlayClick = () => {
-    // Visitor click gesture: unmute video if muted
+    // Visitor click gesture: unmute video if currently muted
     const video = videoRef.current
     if (video && video.muted) {
       video.muted = false
       setIsMuted(false)
+    }
+  }
+
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current
+    if (video && video.duration) {
+      // Dynamic safety timer based on actual video duration + 3 seconds buffer
+      if (fallbackTimerRef.current !== null) {
+        window.clearTimeout(fallbackTimerRef.current)
+      }
+      const durationMs = Math.ceil((video.duration + 3) * 1000)
+      fallbackTimerRef.current = window.setTimeout(() => {
+        completeIntro(false)
+      }, durationMs)
     }
   }
 
@@ -298,12 +316,13 @@ export default function CinematicIntroProvider({
             ref={videoRef}
             className="markhor-intro-video absolute inset-0 h-full w-full object-cover"
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', maxWidth: 'none', objectFit: 'cover' }}
-            src={INTRO_VIDEO_PATH}
-            poster={INTRO_POSTER_PATH}
+            poster={INTRO_POSTER_PRIMARY}
             autoPlay
+            muted={isMuted}
             playsInline
             preload="auto"
             aria-hidden="true"
+            onLoadedMetadata={handleLoadedMetadata}
             onTimeUpdate={(event) => {
               const currentVideo = event.currentTarget
               if (currentVideo.duration) {
@@ -311,12 +330,14 @@ export default function CinematicIntroProvider({
               }
             }}
             onEnded={() => completeIntro(false)}
-            onError={() => completeIntro(false)}
-            onStalled={() => {
-              // On stall, wait 1s fallback
-              window.setTimeout(() => completeIntro(false), 1000)
+            onError={() => {
+              console.warn('[Markhor Intro] Primary video failed, trying alternate source or completing gracefully.')
+              completeIntro(false)
             }}
-          />
+          >
+            <source src={INTRO_VIDEO_PRIMARY} type="video/mp4" />
+            <source src={INTRO_VIDEO_ALT} type="video/mp4" />
+          </video>
 
           <div className="markhor-intro-gradient absolute inset-0 bg-gradient-to-t from-[#071116]/80 via-transparent to-[#071116]/35" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
           <div ref={veilRef} className="markhor-intro-veil absolute inset-0 bg-[#071116] opacity-0" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
@@ -350,8 +371,8 @@ export default function CinematicIntroProvider({
               onClick={toggleSound}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#071116]/80 border border-[#D6B978]/50 text-[10px] font-medium uppercase tracking-widest text-[#F4F0E8] hover:border-[#D6B978] transition-all"
             >
-              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-[#D6B978] animate-pulse" />}
-              <span>{isMuted ? 'Muted' : 'Sound On'}</span>
+              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-amber-400" /> : <Volume2 className="w-3.5 h-3.5 text-[#D6B978] animate-pulse" />}
+              <span>{isMuted ? 'Tap for Sound' : 'Sound On'}</span>
             </button>
 
             <button
