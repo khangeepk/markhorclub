@@ -40,15 +40,32 @@ function prefersReducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
+function IntroSearchParamsListener({
+  onForceReplay,
+}: {
+  onForceReplay: (force: boolean) => void
+}) {
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams?.get('intro') === 'true' || searchParams?.get('replay') === '1') {
+      onForceReplay(true)
+    }
+  }, [searchParams, onForceReplay])
+  return null
+}
+
 export default function CinematicIntroProvider({
   children,
 }: {
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const isHome = pathname === '/'
-  const forceReplay = searchParams?.get('intro') === 'true' || searchParams?.get('replay') === '1'
+  const [forceReplay, setForceReplay] = useState(false)
+
+  const handleForceReplay = useCallback((force: boolean) => {
+    setForceReplay(force)
+  }, [])
 
   const [status, setStatus] = useState<IntroStatus>('loading')
   const [introComplete, setIntroComplete] = useState<boolean>(false)
@@ -298,6 +315,9 @@ export default function CinematicIntroProvider({
 
   return (
     <CinematicIntroContext.Provider value={contextValue}>
+      <React.Suspense fallback={null}>
+        <IntroSearchParamsListener onForceReplay={handleForceReplay} />
+      </React.Suspense>
       {children}
 
       {isHome && status !== 'complete' && (

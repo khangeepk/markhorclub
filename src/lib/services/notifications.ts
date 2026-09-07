@@ -16,6 +16,8 @@ export async function sendInquiryNotifications(input: NotifyInquiryInput) {
   const emailFrom = process.env.EMAIL_FROM || 'info@markhourgroup.com'
   const resendApiKey = process.env.RESEND_API_KEY
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.markhourgroup.com'
+
   const emailSubject = `New Markhor Club Membership Inquiry — ${input.reference}`
   const emailBody = `
 New Markhor Club Membership Inquiry Received!
@@ -31,7 +33,7 @@ Applicant Details:
 - Interest: ${input.interestCategory}
 - Message: ${input.message || 'None provided'}
 
-Admin Portal Link: http://localhost:3000/admin/inquiries
+Admin Portal Link: ${siteUrl}/admin/inquiries
 `
 
   // 1. Log Email Notification Intent

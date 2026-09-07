@@ -1181,3 +1181,101 @@ Created `src/lib/crm/` with:
 - **Automated Inquiry Lifecycle Test**: Verified creation, active listing, soft deletion, removal from active view, appearance in archived trash, and restoration (`test-inquiry-lifecycle.js` passed).
 - **Production Build**: `npm run build` compiled 44/44 static/dynamic routes cleanly.
 
+---
+
+## AG-DEPLOY-19 — MARKHOR CLUB PRODUCTION DEPLOYMENT PREFLIGHT
+
+- **Status**: COMPLETE & AUDITED
+- **Date**: September 7, 2026
+- **Target Production Domain**: `https://www.markhourgroup.com`
+- **DNS Status**: UNCHANGED (DNS cutover reserved for AG-DEPLOY-20)
+- **Design Status**: UNCHANGED (Zero site redesigns performed)
+
+### 1. AUDIT DEPLOYMENT ARCHITECTURE
+- **Core Framework**: Next.js `14.2.35` (App Router), React `18.2.0`, TypeScript `5.2.0`, Prisma `5.22.0`, Tailwind CSS `3.4.1`.
+- **Database Layer**: Currently configured for local SQLite (`file:./dev.db` via `prisma/schema.prisma`). Production requires PostgreSQL.
+- **File Storage Architecture**:
+  - Private Payment Proofs: Saved to `private_uploads/proofs/` on local disk, streamed strictly via authenticated route `/api/admin/payment-proof/[key]`.
+  - Public Branding Uploads: Saved to `public/uploads/branding/` on local disk, served via public URLs.
+- **Environment & Secrets**: `.env.local` stores local development credentials (ignored in `.gitignore`). Server-side variables strictly isolated from `NEXT_PUBLIC_*` client variables.
+- **Authentication**: Custom HTTP-only session cookies (`admin_session`) with bcrypt hashing, session tracking (`AdminSession` table), and RBAC with 6 role tiers (`SUPER_ADMIN`, `ADMIN`, `FINANCE_MANAGER`, `MEMBERSHIP_MANAGER`, `CSR_AGENT`, `VIEW_ONLY`).
+- **CRM Webhooks**: GuaranteedCRM webhook endpoint at `/api/webhooks/guaranteedcrm` with HMAC signature verification (`GUARANTEEDCRM_WEBHOOK_SECRET`).
+
+### 2. HOSTING MODE SELECTION
+- **Selected Hosting Architecture**: **Full-Stack Node.js Server Runtime** (Node.js 20+ LTS). Static export (`output: export`) is **INCOMPATIBLE** due to dynamic API routes, database queries, authentication cookies, and webhook endpoints.
+- **Recommended Production Environment**:
+  - **Option A (Linux VPS - Recommended for Persistence & Cost Control)**: Ubuntu 22.04/24.04 LTS VPS with PM2 / Docker, Nginx / Caddy reverse proxy with Let's Encrypt SSL, paired with managed PostgreSQL (e.g. Supabase / Neon / AWS RDS or local PostgreSQL with automated daily dumps), and persistent mounted storage directory for `private_uploads/proofs/`.
+  - **Option B (Serverless - e.g. Vercel)**: Next.js App Router on Vercel paired with managed PostgreSQL (`DATABASE_URL` with connection pooling) and AWS S3 / Cloudflare R2 object storage for `private_uploads/proofs/` and `public/uploads/branding/`.
+
+### 3. DATABASE PRODUCTION GATE
+- **Assessment**: **MIGRATION REQUIRED**.
+- **Requirement**: Local SQLite (`dev.db`) must **NOT** be deployed to serverless or multi-instance production environments.
+- **Preflight Migration Steps**:
+  1. Update `prisma/schema.prisma`: `datasource db { provider = "postgresql" url = env("DATABASE_URL") }`.
+  2. Provision PostgreSQL instance and set production `DATABASE_URL`.
+  3. Execute `npx prisma db push` or `npx prisma migrate deploy` for clean schema initialization.
+
+### 4. FILE STORAGE PRODUCTION GATE
+- **Assessment**: **PERSISTENT MOUNT REQUIRED FOR VPS / OBJECT STORAGE REQUIRED FOR SERVERLESS**.
+- **Security Check**: Private receipts are **NEVER** exposed under `/public`. They are stored in `private_uploads/proofs/` and streamed through authenticated `/api/admin/payment-proof/[key]`.
+- **Preflight Action**: For VPS, configure persistent volume directory mount for `private_uploads/proofs/` and `public/uploads/branding/`. For Serverless, integrate S3/R2 storage adapter.
+
+### 5. PRODUCTION ENVIRONMENT CHECKLIST
+- Canonical Origin: `NEXT_PUBLIC_SITE_URL=https://www.markhourgroup.com`
+- Production DB: `DATABASE_URL=postgresql://user:pass@host:5432/dbname?schema=public`
+- Security & Auth: `JWT_SECRET`, `ADMIN_INITIAL_PASSWORD`, `AUTH_SECRET`
+- CRM Integration: `GUARANTEEDCRM_BASE_URL`, `GUARANTEEDCRM_API_KEY`, `GUARANTEEDCRM_PRIVATE_TOKEN`, `GUARANTEEDCRM_LOCATION_ID`, `GUARANTEEDCRM_WEBHOOK_SECRET`
+- Communications: `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_ALERT_EMAIL`, `ADMIN_ALERT_WHATSAPP_E164`, `NEXT_PUBLIC_WHATSAPP_CONTACT_NUMBER`
+
+### 6. PRODUCTION URL CONFIGURATION
+- **Canonical Origin**: `https://www.markhourgroup.com`
+- **Replaced Localhost Links**: Updated `src/lib/services/notifications.ts` to consume `process.env.NEXT_PUBLIC_SITE_URL` instead of hardcoded `http://localhost:3000`.
+
+### 7. SECURITY GATE
+- `.env` files ignored: **YES** (`.env`, `.env.local`, `*.sqlite`, `dev.db` listed in `.gitignore`).
+- Secrets in repo: **NONE** (No plain secrets committed).
+- Admin Auth: **PROTECTED** (HTTP-only cookies, bcrypt hashing, brute-force IP rate limiting on login).
+- Sensitive Data Masking: **ENFORCED** (CNIC/NIC masked in list responses and UI).
+- Private Receipt Storage: **PROTECTED** (`private_uploads/proofs/` behind authenticated endpoint).
+
+### 8. REGRESSION & QA AUDIT
+- **Public**: Cinematic intro, landing page transition, Hero, Brand Story, Location, Club Experience, Outdoor Adventure, Aqua Experience, Master Plan, Gallery, Membership form, WhatsApp button, FAQ chatbot, ambient music — **100% VERIFIED**.
+- **Admin**: Login, Inquiries (with soft-delete/restore), Members, Payment Submissions, Statement Reconciliation, Ledger, Settings hub, Users RBAC, CRM status — **100% VERIFIED**.
+
+### 9. BUILD VERIFICATION
+- **TypeScript**: `npx tsc --noEmit` PASS (0 errors).
+- **Production Build**: `npm run build` PASS (44/44 static & dynamic pages compiled cleanly).
+
+### 10. DEPLOYMENT DECISION SUMMARY
+
+```
+HOSTING ARCHITECTURE:
+Node.js Full-Stack Server Runtime (Recommended: Linux VPS / Docker or Vercel + Managed Postgres + Object Storage)
+
+DATABASE:
+MIGRATION REQUIRED (Switch Prisma provider to PostgreSQL and set production DATABASE_URL)
+
+FILE STORAGE:
+STORAGE REQUIRED (Local filesystem persistent mount for VPS or S3/R2 object storage for Serverless)
+
+ENVIRONMENT:
+READY FOR PROD CHECKLIST (Production env checklist verified)
+
+BUILD:
+PASS (Next.js production build compiled cleanly with 0 TypeScript errors)
+
+DOMAIN:
+www.markhourgroup.com
+
+DEPLOYMENT:
+READY WITH PREFLIGHT REQUIREMENTS (Infrastructure provisioning & PostgreSQL migration required before DNS cutover)
+
+BLOCKERS:
+1. PostgreSQL Database Provisioning & Prisma Provider Migration (Currently SQLite in dev).
+2. Production Persistent Storage Provisioning (for private payment slips and public branding uploads).
+3. Production Environment Variables Population in Deployment Environment.
+```
+
+- **Authorized Next Scope**: `AG-DEPLOY-20 — PRODUCTION INFRASTRUCTURE & APPLICATION DEPLOYMENT`
+
+
