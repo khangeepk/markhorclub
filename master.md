@@ -1600,6 +1600,26 @@ LIVE URL: https://www.markhourgroup.com
 
 ### SYSTEM AUDIT RECOMMENDATION: APPROVE FOR PRODUCTION MERGE
 
+---
+
+## AG-MISSION-VISION-34 — MISSION & VISION PAGE
+
+- **Status**: COMPLETE & LIVE
+- **Completion Date**: September 8, 2026
+- **Page Route**: `/mission-vision` (`src/app/(public)/mission-vision/page.tsx`)
+- **Footer Integration**: Added `Mission & Vision` link to directory navigation in `Footer.tsx`.
+- **SEO Metadata**: `title: 'Mission & Vision | Markhor Club'`, `description: 'Discover the mission and vision of Markhor Club — a private destination focused on nature, wellbeing, recreation, hospitality and meaningful community experiences near Khanpur Dam.'`
+
+### COPY & CONTENT IMPLEMENTATION RECORD
+
+- **Hero Eyebrow & Headline**: `MARKHOR CLUB` &bull; `Mission & Vision`
+- **Introductory Lead Line**: `A destination shaped around nature, wellbeing, recreation and meaningful community experiences.`
+- **Mission Section**: Rendered exact approved mission statement in an asymmetric 12-column editorial spread with supporting equestrian lifestyle imagery (`horse riding 2.jpg`).
+- **Vision Section**: Rendered exact approved vision statement in an asymmetric 12-column editorial spread with supporting destination landscape imagery (`location-destination-visual.jpg`).
+- **Closing Invitation**: Pre-launch fee presentation (`PKR 500,000`), `APPLY FOR MEMBERSHIP`, and `BOOK A VIP VISIT` action pathways.
+- **Build Verification**: Next.js production build compiled cleanly with 0 TypeScript or lint errors (`45/45` static/dynamic pages generated).
+
+
 
 
 

@@ -9,6 +9,7 @@ import { MEMBERSHIP_CONFIG } from '../../config/membership'
 
 const FOOTER_NAV = [
   { label: 'Club Vision', href: '#about' },
+  { label: 'Mission & Vision', href: '/mission-vision' },
   { label: 'Amenities', href: '#amenities' },
   { label: 'Outdoor Adventure', href: '#experiences' },
   { label: 'Aqua Theme Park', href: '#aqua-park' },
