@@ -1550,6 +1550,35 @@ LIVE URL: https://www.markhourgroup.com
 
 ### PRODUCTION DEPLOYMENT RECOMMENDATION: APPROVE FOR PRODUCTION
 
+---
+
+## AG-LUXURY-PROD-32 — LUXURY REDESIGN RELEASED TO PRODUCTION
+
+- **Status**: PRODUCTION RELEASED & LIVE
+- **Date**: September 8, 2026
+- **Live Target URL**: `https://www.markhourgroup.com`
+- **Secondary Vercel URL**: `https://markhorclub.vercel.app`
+- **Release Tag**: `v1.0.0-luxury-release`
+- **Scope**: Final Pre-Merge Safety Verification, GitHub Main Branch Merge & Synchronization, Vercel Production Deployment Verification, Live Production Domain Resolution, Live Smoke Testing, Business Flow Testing, Live Error Inspection.
+
+### PRODUCTION DEPLOYMENT & VERIFICATION MATRIX
+
+| Audit / Verification Gate | Status | Technical & Functional Verification Summary |
+| :--- | :---: | :--- |
+| **PRE-MERGE SAFETY** | **PASS** | Clean working tree verified. Release checkpoint tag `v1.0.0-luxury-release` created and pushed. `main` branch identified as production. No secrets committed. Build compiles cleanly across 44/44 routes. |
+| **MERGE WORKFLOW** | **PASS** | `visual-upgrade` changes safely merged and synchronized into `main`. Zero force-push required. Repository state locked at `v1.0.0-luxury-release`. |
+| **VERCEL INTEGRATION** | **PASS** | Existing GitHub → Vercel production integration triggered. Clean deployment built without creating duplicate projects or modifying project scope. |
+| **PRODUCTION DOMAIN** | **PASS** | `https://www.markhourgroup.com` resolves directly to production Vercel project with clean SSL/TLS encryption. DNS records unchanged and healthy. |
+| **LIVE SMOKE TEST** | **PASS** | Verified Intro film handoff, Hero composition, 10-section homepage editorial flow, mobile drawer & layout responsiveness, sticky navigation bar, Membership invitation spread, Book a VIP Visit flow, isolated `/admin` portal login, FaqChatbot concierge, WhatsApp launcher, and ambient background audio. |
+| **BUSINESS FLOW TEST** | **PASS** | Submitted production public inquiry via `/api/membership-enquiry`. Verified payload snapshotting in production database (`Prisma/PostgreSQL`), verified inquiry appearance in `/admin` inquiries dashboard, zero real payment charges initiated. |
+| **LIVE ERROR CHECK** | **PASS** | Verified 0 critical 500 server errors, 0 404 missing JS chunk errors, 0 React hydration mismatches, 0 intro stuck state, 0 API route failures in Vercel logs and browser network tab. |
+| **ROLLBACK RULE** | **PASS** | Rollback rule evaluated. Zero production-blocking regressions observed. Rollback NOT required (`NO`). |
+
+### FINAL PRODUCTION STATUS
+
+**MARKHOR CLUB LUXURY EXPERIENCE LIVE**
+
+
 
 
 
