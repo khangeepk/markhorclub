@@ -4,11 +4,14 @@ interface SectionWrapperProps {
   children: React.ReactNode
   id?: string
   className?: string
-  bg?: 'midnight' | 'navy' | 'black' | 'ivory' | 'glass' | 'transparent'
+  bg?: 'midnight' | 'navy' | 'black' | 'slate' | 'ivory' | 'glass' | 'transparent'
   padding?: 'none' | 'sm' | 'md' | 'lg' | 'xl'
   as?: 'section' | 'article' | 'div' | 'footer'
 }
 
+/**
+ * Standardized Section Wrapper with background environment presets and responsive fluid section spacing.
+ */
 export default function SectionWrapper({
   children,
   id,
@@ -21,6 +24,7 @@ export default function SectionWrapper({
     midnight: 'bg-[#071116] text-[#F4F0E8]',
     navy: 'bg-[#0B1C26] text-[#F4F0E8]',
     black: 'bg-[#04090C] text-[#F4F0E8]',
+    slate: 'bg-[#121E26] text-[#F4F0E8]',
     ivory: 'bg-[#F4F0E8] text-[#071116]',
     glass: 'glass-panel text-[#F4F0E8]',
     transparent: 'bg-transparent text-[#F4F0E8]',
@@ -28,10 +32,10 @@ export default function SectionWrapper({
 
   const paddingStyles = {
     none: 'py-0',
-    sm: 'py-12 md:py-16',
-    md: 'py-16 md:py-24',
-    lg: 'py-20 md:py-32',
-    xl: 'py-28 md:py-44',
+    sm: 'py-10 md:py-14 lg:py-16',
+    md: 'py-14 md:py-20 lg:py-24',
+    lg: 'section-space',
+    xl: 'section-space-hero',
   }
 
   return (

@@ -1,283 +1,286 @@
-"use client"
+'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useLayoutEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, MapPin, Navigation } from 'lucide-react'
+import { ArrowRight, MapPin, Navigation, Compass } from 'lucide-react'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/dist/ScrollTrigger'
 import Container from '../ui/Container'
 import ConceptDisclaimer from '../ui/ConceptDisclaimer'
+import SectionWrapper from '../ui/SectionWrapper'
+import { SectionEyebrow, DisplayTitle, SectionDescription } from '../ui/Typography'
+import LuxuryButton from '../ui/LuxuryButton'
 
-const DESTINATION_PATH = ['PAKISTAN', 'KPK', 'KHANPUR DAM', 'MARKHOR CLUB']
+const DESTINATION_PATH = [
+  { num: '01', label: 'PAKISTAN', sub: 'Country' },
+  { num: '02', label: 'KPK', sub: 'Province' },
+  { num: '03', label: 'KHANPUR DAM', sub: 'Destination' },
+  { num: '04', label: 'MARKHOR CLUB', sub: '500 Kanal Estate' },
+]
 
 const FACT_ITEMS = [
   {
     label: 'LOCATION',
     value: 'Near Alexander Road, Khanpur Dam, KPK',
-    sub: 'Pakistan',
+    sub: 'Khyber Pakhtunkhwa, Pakistan',
   },
   {
-    label: 'ACCESS',
+    label: 'PROXIMITY',
     value: 'Approx. 2 KM from Alexander Road',
-    sub: 'Near the Khanpur Dam approach',
+    sub: 'Near Khanpur Dam main access approach',
   },
   {
-    label: 'OUTLOOK',
+    label: 'ORIENTATION',
     value: 'Khanpur Dam View Facing',
-    sub: 'Panoramic mountain & water vistas',
+    sub: 'Panoramic waterfront & mountain vistas',
   },
   {
-    label: 'SCALE',
-    value: '500 Kanal Destination',
-    sub: 'Master-planned estate',
+    label: 'ESTATE SCALE',
+    value: '500 Kanal Master Plan',
+    sub: 'Integrated club & resort destination',
   },
 ]
 
 export default function LocationDestination() {
   const sectionRef = useRef<HTMLDivElement>(null)
+  const pinContainerRef = useRef<HTMLDivElement>(null)
   const heroVisualRef = useRef<HTMLDivElement>(null)
-  const eyebrowRef = useRef<HTMLDivElement>(null)
-  const headlineLine1Ref = useRef<HTMLSpanElement>(null)
-  const headlineLine2Ref = useRef<HTMLSpanElement>(null)
-  const pathRef = useRef<HTMLDivElement>(null)
-  const accessCardRef = useRef<HTMLDivElement>(null)
+  const textContentRef = useRef<HTMLDivElement>(null)
+  const routePathRef = useRef<HTMLDivElement>(null)
   const factStackRef = useRef<HTMLDivElement>(null)
-  const graphicRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    // GSAP ScrollTrigger timeline temporarily disabled for Layer 1 static layout QA
-    return () => {}
+  useLayoutEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReducedMotion) return
+
+    gsap.registerPlugin(ScrollTrigger)
+
+    const ctx = gsap.context(() => {
+      // Desktop Controlled Pin / Parallax Scroll Story (Hold landscape while location text progresses)
+      const isDesktop = window.innerWidth >= 1024
+
+      if (isDesktop && pinContainerRef.current && heroVisualRef.current) {
+        ScrollTrigger.create({
+          trigger: pinContainerRef.current,
+          start: 'top top+=80',
+          end: 'bottom bottom',
+          pin: heroVisualRef.current,
+          pinSpacing: false,
+        })
+      }
+
+      // Parallax scale on visual frame
+      if (heroVisualRef.current) {
+        gsap.fromTo(
+          heroVisualRef.current.querySelector('img'),
+          { scale: 1.08 },
+          {
+            scale: 1.0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: heroVisualRef.current,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+          }
+        )
+      }
+    }, sectionRef)
+
+    return () => ctx.revert()
   }, [])
 
   return (
-    <section
-      ref={sectionRef}
+    <SectionWrapper
       id="destination"
-      className="section-space-compact relative w-full bg-[#071116] text-[#F4F0E8] overflow-hidden select-none"
+      bg="midnight"
+      padding="lg"
+      className="relative w-full border-t border-[#C7A15A]/15 select-none"
     >
-      {/* Background Water Ambient Vignette */}
-      <div className="absolute inset-0 bg-radial-vignette opacity-70 pointer-events-none" />
-      <div className="absolute -top-40 right-0 w-[500px] h-[500px] bg-[#164E63]/15 rounded-full blur-[120px] pointer-events-none" />
+      <div ref={sectionRef}>
+        {/* Background Water Ambient Glow */}
+        <div className="pointer-events-none absolute -top-40 right-0 h-[600px] w-[600px] bg-[#164E63]/15 rounded-full blur-[140px]" />
 
-      {/* Cinematic Full-Bleed Destination Header */}
-      <Container>
-        <div
-          ref={heroVisualRef}
-          className="relative w-full aspect-[16/9] lg:aspect-[21/9] min-h-[360px] md:min-h-[460px] rounded-sm overflow-hidden border border-[#C7A15A]/25 shadow-2xl mb-12 group"
-        >
-          <Image
-            src="/assets/images/location-destination-visual.jpg"
-            alt="Khanpur Dam Panorama - Markhor Club Location"
-            fill
-            sizes="(max-width: 1200px) 100vw, 1400px"
-            priority
-            className="object-cover object-center transition-transform duration-1000 group-hover:scale-[1.02]"
-          />
-          {/* Deep Navy/Black Gradient Overlay for Text Readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#071116] via-[#071116]/50 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#071116]/80 via-transparent to-transparent w-3/4" />
+        <Container>
+          {/* Header Section: Eyebrow + Display Headline */}
+          <header className="relative mb-12 lg:mb-16">
+            <SectionEyebrow number="03" accentLine={true}>
+              THE DESTINATION &bull; KHANPUR DAM
+            </SectionEyebrow>
 
-          {/* Overlay Headline & Eyebrow */}
-          <div className="absolute bottom-8 left-6 sm:bottom-12 sm:left-12 max-w-2xl z-10">
-            <div ref={eyebrowRef} className="flex items-center gap-3 text-xs uppercase tracking-[0.25em] font-semibold text-[#D6B978] mb-3 font-sans">
-              <span className="w-6 h-[1px] bg-[#C7A15A]" aria-hidden="true" />
-              <span>THE DESTINATION</span>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+              <div className="lg:col-span-8">
+                <h2 className="text-display-lg font-serif text-[#F4F0E8] font-normal leading-[1.06] tracking-tight">
+                  WHERE MOUNTAINS MEET<br />
+                  <span className="italic font-light text-gold-gradient">THE WATER.</span>
+                </h2>
+              </div>
+              <div className="lg:col-span-4">
+                <p className="text-sm font-sans font-light text-[#9A9389] leading-relaxed border-l border-[#C7A15A]/40 pl-4">
+                  Set near Alexander Road and directly facing Khanpur Dam, Markhor Club brings elevated hospitality into KPK&apos;s premier waterfront landscape.
+                </p>
+              </div>
             </div>
+          </header>
 
-            <h2 className="text-display-lg font-serif text-[#F4F0E8] font-normal tracking-tight leading-[1.08] mb-4">
-              <span className="block overflow-hidden py-1">
-                <span ref={headlineLine1Ref} className="block">
-                  WHERE THE MOUNTAINS
-                </span>
-              </span>
-              <span className="block overflow-hidden py-1 text-gold-gradient">
-                <span ref={headlineLine2Ref} className="block">
-                  MEET THE WATER.
-                </span>
-              </span>
-            </h2>
-          </div>
+          {/* Desktop Pin Container / Mobile Vertical Flow */}
+          <div ref={pinContainerRef} className="relative grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start mb-16">
+            {/* Left 7 Columns: Sticky Large Cinematic Destination Landscape */}
+            <div ref={heroVisualRef} className="lg:col-span-7">
+              <div className="relative w-full aspect-[16/10] lg:aspect-[21/9] min-h-[380px] sm:min-h-[480px] rounded-none sm:rounded-sm overflow-hidden border border-[#C7A15A]/25 shadow-2xl group">
+                <Image
+                  src="/assets/images/location-destination-visual.jpg"
+                  alt="Khanpur Dam Panorama - Markhor Club Location"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 58vw"
+                  priority
+                  className="object-cover object-center transition-transform duration-1000 group-hover:scale-[1.02]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#071116] via-[#071116]/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#071116]/75 via-transparent to-transparent w-2/3" />
 
-          <div className="absolute top-6 right-6 z-10">
-            <ConceptDisclaimer label="Artist's Impression" />
-          </div>
-        </div>
-
-        {/* Supporting Copy & Destination Path Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-12 border-b border-[#C7A15A]/15 pb-8">
-          <div className="lg:col-span-7 space-y-4">
-            <p className="text-lg md:text-xl text-[#F4F0E8] font-sans font-light leading-relaxed">
-              Set near Alexander Road and facing the landscape of Khanpur Dam, Markhor Club brings a considered club experience into one of KPK&apos;s most distinctive natural settings.
-            </p>
-            <p className="text-sm md:text-base text-[#9A9389] font-sans font-light leading-relaxed">
-              A destination shaped by water, mountains, open space and a 500 Kanal vision for elevated club living.
-            </p>
-          </div>
-
-          {/* Linear Destination Path */}
-          <div ref={pathRef} className="lg:col-span-5 flex items-center justify-between gap-2 overflow-x-auto pb-2 sm:pb-0">
-            {DESTINATION_PATH.map((step, idx) => (
-              <React.Fragment key={step}>
-                <div className="path-step flex flex-col items-center text-center shrink-0">
-                  <span className="text-[10px] font-mono text-[#C7A15A] mb-1">
-                    0{idx + 1}
+                <div className="absolute bottom-6 left-6 z-10">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#D6B978] block mb-1">
+                    DESTINATION PANORAMA
                   </span>
-                  <span className="text-xs uppercase tracking-widest font-semibold text-[#F4F0E8] font-sans">
-                    {step}
+                  <span className="font-serif text-2xl font-light text-[#F4F0E8]">
+                    Khanpur Dam, Khyber Pakhtunkhwa
                   </span>
                 </div>
-                {idx < DESTINATION_PATH.length - 1 && (
-                  <div className="path-step flex items-center shrink-0 text-[#C7A15A]/60">
-                    <span className="w-6 sm:w-10 h-[1px] bg-gradient-to-r from-[#C7A15A]/40 to-[#C7A15A]" />
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
 
-        {/* Verified Proximity & View Cards */}
-        <div ref={accessCardRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14">
-          {/* Card 1: 2 KM Proximity */}
-          <div className="glass-panel p-8 rounded-sm border border-[#C7A15A]/20 hover:border-[#C7A15A]/40 transition-all duration-300">
-            <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] font-semibold text-[#C7A15A] mb-4">
-              <Navigation className="w-4 h-4 text-[#C7A15A]" />
-              <span>ACCESS CUE</span>
-            </div>
-            <div className="text-4xl lg:text-5xl font-serif text-gold-gradient font-normal tracking-tight mb-2">
-              APPROX. 2 KM
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[#F4F0E8] mb-1">
-              FROM ALEXANDER ROAD
-            </p>
-            <p className="text-xs text-[#9A9389] font-sans font-light">
-              Verified access proximity near Khanpur Dam approach
-            </p>
-          </div>
-
-          {/* Card 2: Khanpur Dam View Facing */}
-          <div className="glass-panel p-8 rounded-sm border border-[#C7A15A]/20 hover:border-[#C7A15A]/40 transition-all duration-300">
-            <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] font-semibold text-[#C7A15A] mb-4">
-              <MapPin className="w-4 h-4 text-[#C7A15A]" />
-              <span>ORIENTATION</span>
-            </div>
-            <div className="text-3xl lg:text-4xl font-serif text-gold-gradient font-normal tracking-tight mb-2">
-              KHANPUR DAM
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[#F4F0E8] mb-1">
-              VIEW FACING
-            </p>
-            <p className="text-xs text-[#9A9389] font-sans font-light">
-              Panoramic waterfront perspectives over Khanpur Dam
-            </p>
-          </div>
-
-          {/* Card 3: 500 Kanal Context */}
-          <div className="glass-panel p-8 rounded-sm border border-[#C7A15A]/20 hover:border-[#C7A15A]/40 transition-all duration-300">
-            <div className="flex items-center gap-3 text-xs uppercase tracking-[0.2em] font-semibold text-[#C7A15A] mb-4">
-              <span className="w-2 h-2 rounded-full bg-[#C7A15A]" />
-              <span>DESTINATION SCALE</span>
-            </div>
-            <div className="text-4xl lg:text-5xl font-serif text-gold-gradient font-normal tracking-tight mb-2">
-              500 KANAL
-            </div>
-            <p className="text-xs uppercase tracking-[0.18em] font-semibold text-[#F4F0E8] mb-1">
-              MASTER ESTATE
-            </p>
-            <p className="text-xs text-[#9A9389] font-sans font-light">
-              Expansive mountain & water lifestyle destination
-            </p>
-          </div>
-        </div>
-
-        {/* Editorial Fact Stack & Abstract Graphic Map Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center mb-12">
-          {/* Fact Stack */}
-          <div ref={factStackRef} className="lg:col-span-6 space-y-6">
-            <div className="text-xs uppercase tracking-[0.25em] font-semibold text-[#C7A15A] mb-6">
-              DESTINATION DATA
-            </div>
-            {FACT_ITEMS.map((item) => (
-              <div
-                key={item.label}
-                className="location-fact-node flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#F4F0E8]/10 pb-4 gap-2"
-              >
-                <span className="text-xs font-mono text-[#D6B978] uppercase tracking-wider min-w-[100px]">
-                  {item.label}
-                </span>
-                <div className="text-right sm:text-left">
-                  <span className="text-sm font-sans font-medium text-[#F4F0E8] block">
-                    {item.value}
-                  </span>
-                  <span className="text-xs text-[#9A9389] font-sans block">
-                    {item.sub}
-                  </span>
+                <div className="absolute top-4 right-4 z-10">
+                  <ConceptDisclaimer label="Artist's Impression" />
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* Right 5 Columns: Destination Narrative, Route Line & Access Cards */}
+            <div ref={textContentRef} className="lg:col-span-5 space-y-8">
+              {/* Linear Route Progression Line */}
+              <div ref={routePathRef} className="glass-panel p-6 border border-[#C7A15A]/20 bg-[#0B1C26]/80 rounded-none sm:rounded-sm">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#D6B978] block mb-4">
+                  DESTINATION ROUTE PATH
+                </span>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative">
+                  {DESTINATION_PATH.map((step, idx) => (
+                    <div key={step.label} className="flex flex-col relative z-10">
+                      <span className="text-[10px] font-mono text-[#C7A15A]">{step.num}</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-[#F4F0E8] font-sans mt-0.5">
+                        {step.label}
+                      </span>
+                      <span className="text-[9px] text-[#9A9389] font-sans">
+                        {step.sub}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3 Architectural Proximity & Access Cards */}
+              <div className="space-y-4">
+                <div className="glass-panel p-6 border border-[#C7A15A]/20 rounded-none sm:rounded-sm hover:border-[#C7A15A]/40 transition-all">
+                  <div className="flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#C7A15A] mb-2">
+                    <Navigation className="w-3.5 h-3.5 text-[#C7A15A]" />
+                    <span>ACCESS PROXIMITY</span>
+                  </div>
+                  <div className="font-serif text-3xl font-normal text-gold-gradient tracking-tight">
+                    APPROX. 2 KM
+                  </div>
+                  <span className="text-xs uppercase tracking-[0.18em] font-semibold text-[#F4F0E8] block mt-1">
+                    FROM ALEXANDER ROAD
+                  </span>
+                  <p className="text-xs text-[#9A9389] font-sans font-light mt-1">
+                    Direct access via the Alexander Road approach to Khanpur Dam
+                  </p>
+                </div>
+
+                <div className="glass-panel p-6 border border-[#C7A15A]/20 rounded-none sm:rounded-sm hover:border-[#C7A15A]/40 transition-all">
+                  <div className="flex items-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#C7A15A] mb-2">
+                    <MapPin className="w-3.5 h-3.5 text-[#C7A15A]" />
+                    <span>GEOGRAPHIC ORIENTATION</span>
+                  </div>
+                  <div className="font-serif text-2xl font-normal text-[#F4F0E8] tracking-tight">
+                    KHANPUR DAM VIEW FACING
+                  </div>
+                  <p className="text-xs text-[#9A9389] font-sans font-light mt-1">
+                    Uninterrupted waterfront vistas across the reservoir & mountain ridgelines
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Abstract SVG Graphic & Destination Marker */}
-          <div ref={graphicRef} className="lg:col-span-6">
-            <div className="relative glass-panel p-8 sm:p-10 rounded-sm border border-[#C7A15A]/25 flex flex-col items-center justify-center text-center min-h-[320px] overflow-hidden">
-              {/* Abstract Topographic Contour Background */}
-              <svg
-                className="absolute inset-0 w-full h-full opacity-20 text-[#C7A15A]"
-                viewBox="0 0 400 300"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path d="M-50 150 C50 80, 150 220, 250 100 C350 0, 450 180, 550 120" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M-50 190 C50 120, 150 260, 250 140 C350 40, 450 220, 550 160" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" />
-                <path d="M-50 230 C50 160, 150 300, 250 180 C350 80, 450 260, 550 200" stroke="currentColor" strokeWidth="1" />
-              </svg>
+          {/* Destination Data Stack & Topographic Contour Badge */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center mb-14 pt-8 border-t border-[#C7A15A]/15">
+            {/* Fact Stack */}
+            <div ref={factStackRef} className="lg:col-span-7 space-y-4">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.26em] text-[#C7A15A] block mb-4">
+                VERIFIED SPECIFICATIONS
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {FACT_ITEMS.map((item) => (
+                  <div key={item.label} className="border-l border-[#C7A15A]/30 pl-4 py-2 bg-[#0B1C26]/40">
+                    <span className="text-[9px] font-mono text-[#D6B978] uppercase tracking-wider block">
+                      {item.label}
+                    </span>
+                    <span className="text-sm font-sans font-medium text-[#F4F0E8] block mt-0.5">
+                      {item.value}
+                    </span>
+                    <span className="text-xs text-[#9A9389] font-sans font-light block mt-0.5">
+                      {item.sub}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-              {/* Gold Markhor Emblem Destination Pin Marker */}
-              <div className="relative z-10 mb-6 flex flex-col items-center">
-                <div className="relative w-16 h-16 flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full bg-[#C7A15A]/20 animate-ping opacity-75" />
-                  <div className="relative w-12 h-12 rounded-full bg-[#071116] border border-[#C7A15A] flex items-center justify-center shadow-lg shadow-[#C7A15A]/20">
-                    <Image
-                      src="/assets/logos/markhor-logo-gold.png"
-                      alt="Markhor Club Pin"
-                      width={32}
-                      height={32}
-                      className="w-auto h-6 object-contain"
-                    />
+            {/* Topographic Overview Badge */}
+            <div className="lg:col-span-5">
+              <div className="glass-panel p-8 border border-[#C7A15A]/25 flex flex-col items-center justify-center text-center relative overflow-hidden rounded-none sm:rounded-sm">
+                <svg
+                  className="absolute inset-0 w-full h-full opacity-15 text-[#C7A15A]"
+                  viewBox="0 0 400 300"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path d="M-50 150 C50 80, 150 220, 250 100 C350 0, 450 180, 550 120" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M-50 190 C50 120, 150 260, 250 140 C350 40, 450 220, 550 160" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" />
+                </svg>
+
+                <div className="relative z-10 flex flex-col items-center">
+                  <div className="w-12 h-12 rounded-full bg-[#071116] border border-[#D6B978] flex items-center justify-center mb-4 shadow-lg shadow-[#D6B978]/15">
+                    <Compass className="w-5 h-5 text-[#D6B978]" />
+                  </div>
+                  <span className="font-serif text-xl font-normal text-[#F4F0E8]">
+                    MARKHOR CLUB ESTATE
+                  </span>
+                  <span className="text-[10px] text-[#D6B978] uppercase tracking-[0.22em] font-sans mt-1">
+                    NEAR ALEXANDER ROAD &bull; KHANPUR DAM
+                  </span>
+                  <div className="mt-4">
+                    <ConceptDisclaimer label="Topographic Geographic Overview" />
                   </div>
                 </div>
-                <span className="text-xs uppercase tracking-[0.2em] font-serif font-semibold text-[#F4F0E8] mt-3">
-                  MARKHOR CLUB ESTATE
-                </span>
-                <span className="text-[10px] text-[#C7A15A] uppercase tracking-widest font-sans mt-1">
-                  NEAR ALEXANDER ROAD &bull; KHANPUR DAM
-                </span>
-              </div>
-
-              <div className="relative z-10">
-                <ConceptDisclaimer label="Conceptual Geographic Overview" />
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Section Primary CTA & Handoff Microcopy */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-[#C7A15A]/15">
-          <Link
-            href="#contact"
-            className="group inline-flex items-center gap-3 px-8 py-4 rounded-sm bg-gradient-to-r from-[#C7A15A] to-[#D6B978] text-[#071116] font-sans font-semibold text-xs tracking-[0.18em] uppercase shadow-lg hover:shadow-xl hover:shadow-[#C7A15A]/30 hover:-translate-y-0.5 transition-all duration-300 min-h-[48px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C7A15A]"
-          >
-            <span>EXPLORE THE LOCATION</span>
-            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </Link>
+          {/* Section Exit CTA */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-[#C7A15A]/15">
+            <LuxuryButton href="#contact" variant="primary">
+              EXPLORE THE LOCATION
+            </LuxuryButton>
 
-          <span className="text-xs uppercase tracking-[0.25em] text-[#9A9389] font-sans text-center sm:text-right">
-            A DESTINATION DESIGNED TO BE EXPERIENCED.
-          </span>
-        </div>
-      </Container>
-    </section>
+            <span className="text-[10px] uppercase tracking-[0.24em] text-[#9A9389] font-sans text-center sm:text-right">
+              A DESTINATION DESIGNED TO BE EXPERIENCED.
+            </span>
+          </div>
+        </Container>
+      </div>
+    </SectionWrapper>
   )
 }

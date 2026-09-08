@@ -6,10 +6,12 @@ import CinematicIntroProvider from '@/components/common/CinematicIntro'
 import { WhatsAppButton } from '@/components/common/WhatsAppButton'
 import { FaqChatbot } from '@/components/common/FaqChatbot'
 import { BackgroundAmbientAudio } from '@/components/common/BackgroundAmbientAudio'
+import { CustomCursor } from '@/components/common/CustomCursor'
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <CinematicIntroProvider>
+      <CustomCursor />
       <BackgroundAmbientAudio />
       <SmoothScrollProvider>
         <Header />
@@ -21,3 +23,4 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     </CinematicIntroProvider>
   )
 }
+

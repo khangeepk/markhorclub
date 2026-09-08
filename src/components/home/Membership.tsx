@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Crown, Sparkles, CheckCircle2, ShieldCheck, AlertCircle, Phone, Mail, ArrowRight, Loader2, RefreshCw } from 'lucide-react'
+import { Crown, CheckCircle2, AlertCircle, Phone, Mail, Calendar, ArrowRight, Loader2, RefreshCw, ShieldCheck } from 'lucide-react'
 import Container from '../ui/Container'
 import SectionWrapper from '../ui/SectionWrapper'
 import { SectionEyebrow } from '../ui/Typography'
@@ -29,12 +29,12 @@ interface FormErrors {
 }
 
 const MEMBERSHIP_PILLARS = [
-  { number: '01', title: 'DINE', subtitle: 'Gastronomy & Lounges', desc: 'Experience fine dining, sunset terraces, and private members lounges.' },
-  { number: '02', title: 'MOVE', subtitle: 'Fitness & Sports', desc: 'Access state-of-the-art gym, indoor sports courts, and equestrian trails.' },
-  { number: '03', title: 'RESTORE', subtitle: 'Wellness & Spa', desc: 'Rejuvenate with hydrotherapy jacuzzi, thermal suites, and shoreline pools.' },
-  { number: '04', title: 'PLAY', subtitle: 'Golf & Leisure', desc: 'Enjoy scenic fairway landscapes, practice greens, and recreational grounds.' },
-  { number: '05', title: 'EXPLORE', subtitle: 'Water & Adventure', desc: 'Embrace open-water boating, jet-ski excursions, and mountain ziplines.' },
-  { number: '06', title: 'CONNECT', subtitle: 'Community & Events', desc: 'Share moments at grand banquet lawns, celebrations, and outdoor gatherings.' },
+  { number: '01', title: 'GASTRONOMY', desc: 'Sunset lakeside dining rooms, members tea lounge, and private banquet terraces.' },
+  { number: '02', title: 'ATHLETICS', desc: 'State-of-the-art fitness suites, indoor sports halls, and mountain trail access.' },
+  { number: '03', title: 'WELLNESS', desc: 'Hydrotherapy plunge pools, thermal baths, and lakeside relaxation decks.' },
+  { number: '04', title: 'FAIRWAYS', desc: 'Contoured golf driving grounds, practice greens, and open leisure lawns.' },
+  { number: '05', title: 'MARINA', desc: 'Open water boating, jet-ski berths, and lakeside watersports access.' },
+  { number: '06', title: 'COMMUNITY', desc: 'Exclusive access to member-only cultural gatherings, banquets, and celebrations.' },
 ]
 
 export default function Membership() {
@@ -120,14 +120,23 @@ export default function Membership() {
         })
       } else {
         setSubmitStatus('error')
-        setErrorMessage(data.error || 'Submission failed. Please check your network or contact us directly.')
+        setErrorMessage(data.error || 'Submission failed. Please check your connection or contact us directly.')
       }
     } catch (err) {
       console.error('Submission error:', err)
       setSubmitStatus('error')
-      setErrorMessage('Network request error. Please try again or call UAN ' + MEMBERSHIP_CONFIG.uanPhone)
+      setErrorMessage('Network error. Please try again or call UAN ' + MEMBERSHIP_CONFIG.uanPhone)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const scrollToForm = () => {
+    const formElement = document.getElementById('membership-application-form')
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' })
+      const firstInput = document.getElementById('fullName')
+      if (firstInput) firstInput.focus()
     }
   }
 
@@ -136,96 +145,131 @@ export default function Membership() {
       id="membership"
       bg="navy"
       padding="md"
-      className="relative overflow-hidden bg-gradient-to-b from-[#071116] via-[#0B1C26] to-[#04090C] text-white"
+      className="relative overflow-hidden bg-[#071116] py-24 text-[#F4F0E8]"
     >
-      {/* Decorative Radial Lighting */}
-      <div className="pointer-events-none absolute -top-40 right-1/4 w-[700px] h-[700px] bg-[#C7A15A]/10 rounded-full blur-[160px]" />
-      <div className="pointer-events-none absolute bottom-0 left-0 w-[600px] h-[600px] bg-cyan-900/10 rounded-full blur-[150px]" />
-
+      {/* Calm, Subtle Radial Ambient Glow — Low Motion Intensity */}
+      <div className="pointer-events-none absolute -top-40 right-1/4 h-[700px] w-[700px] rounded-full bg-[#C7A15A]/5 blur-[180px]" />
+      
       <Container>
-        {/* SECTION INTRO */}
-        <div className="mb-12 max-w-4xl">
-          <SectionEyebrow>
-            MEMBERSHIP
-          </SectionEyebrow>
+        {/* SECTION HEADER & UNHURRIED NARRATIVE */}
+        <div className="mx-auto mb-16 max-w-4xl text-center">
+          <div className="inline-flex items-center gap-2 border-b border-[#C7A15A]/30 pb-1 text-[10px] uppercase tracking-[0.25em] text-[#D6B978] font-mono">
+            <Crown className="h-3.5 w-3.5 text-[#D6B978]" />
+            <span>SECTION 09 &bull; PRIVATE MEMBERSHIP INVITATION</span>
+          </div>
 
-          <h2 className="mt-3 font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight text-[#F4F0E8]">
-            BECOME PART <br />
-            <span className="italic font-normal text-[#D6B978]">OF MARKHOR.</span>
+          <h2 className="mt-5 font-serif text-4xl sm:text-5xl md:text-6xl font-light tracking-tight text-[#F4F0E8]">
+            AN INVITATION TO BELONG TO <br />
+            <span className="italic text-[#D6B978]">PAKISTAN&apos;S PREMIER LAKEFRONT CLUB.</span>
           </h2>
 
-          <p className="mt-6 text-base sm:text-lg md:text-xl font-light leading-relaxed text-[#9A9389]">
-            Membership at Markhor Club is an invitation to experience a destination shaped around leisure, wellness, 
-            sport, adventure and community along Khanpur Dam.
-          </p>
-
-          <p className="mt-3 text-sm sm:text-base font-light text-[#9A9389]/80 italic">
-            Begin with our current pre-launch membership opportunity.
+          <p className="mt-6 text-base sm:text-lg font-light leading-relaxed text-[#9A9389] max-w-2xl mx-auto">
+            Markhor Club membership offers privileged access to 500 Kanals of curated leisure, wellness, equestrian trails, aquatic sport, and lakeview gastronomy along Khanpur Dam.
           </p>
         </div>
 
-        {/* EDITORIAL MEMBERSHIP FEE COMPOSITION */}
-        <div className="mb-14 rounded-2xl border border-[#D6B978]/30 bg-gradient-to-r from-[#0B1C26] via-[#0E2533] to-[#0B1C26] p-7 sm:p-10 relative overflow-hidden shadow-2xl">
-          <div className="pointer-events-none absolute top-0 right-0 w-80 h-80 bg-[#D6B978]/5 rounded-full blur-[100px]" />
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Fee Anchor */}
-            <div className="lg:col-span-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <Crown className="w-5 h-5 text-[#D6B978]" />
-                <span className="text-xs uppercase tracking-[0.25em] font-mono text-[#D6B978]">
-                  {MEMBERSHIP_CONFIG.phaseLabel} OPPORTUNITY
-                </span>
+        {/* EDITORIAL PRIVATE-CLUB FEE CERTIFICATE (NOT A SAAS CARD) */}
+        <div className="relative mb-16 overflow-hidden border border-[#C7A15A]/30 bg-gradient-to-b from-[#0B1C26] via-[#08151D] to-[#071116] p-8 sm:p-14 rounded-sm shadow-2xl">
+          {/* Fine Hairline Corner Accents */}
+          <div className="pointer-events-none absolute left-3 top-3 font-mono text-[9px] text-[#D6B978]/50">+ PRIVATE INVITATION</div>
+          <div className="pointer-events-none absolute right-3 top-3 font-mono text-[9px] text-[#D6B978]/50">LIMITED AVAILABILITY +</div>
+
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-center">
+            {/* Left Fee Anchor Spread */}
+            <div className="lg:col-span-6 space-y-6">
+              <div className="inline-block border-b border-[#D6B978]/40 pb-1 text-[10px] font-mono uppercase tracking-[0.25em] text-[#D6B978]">
+                {MEMBERSHIP_CONFIG.phaseLabel.toUpperCase()} OPPORTUNITY
               </div>
 
-              <h3 className="font-serif text-3xl sm:text-4xl text-[#F4F0E8] font-light">
-                {MEMBERSHIP_CONFIG.phaseLabel.toUpperCase()} MEMBERSHIP
+              <h3 className="font-serif text-3xl sm:text-4xl font-light text-[#F4F0E8] leading-tight">
+                {MEMBERSHIP_CONFIG.phaseLabel} Club Membership
               </h3>
 
-              <div className="pt-2">
-                <span className="text-xs font-mono text-[#9A9389] uppercase tracking-widest block mb-1">
-                  CURRENT MEMBERSHIP FEE
+              <div className="border-t border-[#C7A15A]/20 pt-4">
+                <span className="block text-[10px] font-mono uppercase tracking-[0.2em] text-[#9A9389]">
+                  CURRENT PRE-LAUNCH MEMBERSHIP FEE
                 </span>
-                <div className="font-serif text-5xl sm:text-7xl font-light text-[#D6B978] tracking-tight">
+                <div className="mt-2 font-serif text-5xl sm:text-6xl lg:text-7xl font-light tracking-tight text-[#D6B978]">
                   {MEMBERSHIP_CONFIG.feeFormatted}
                 </div>
+                <p className="mt-3 text-xs font-mono text-[#9A9389]">
+                  {MEMBERSHIP_CONFIG.qualifier}
+                </p>
               </div>
-
-              <p className="text-xs sm:text-sm font-mono text-[#9A9389] pt-2 border-t border-white/10">
-                {MEMBERSHIP_CONFIG.qualifier}
-              </p>
             </div>
 
-            {/* Right Lifestyle Promise */}
-            <div className="lg:col-span-6 border-t lg:border-t-0 lg:border-l border-white/10 pt-6 lg:pt-0 lg:pl-10 space-y-4 text-sm text-[#9A9389] font-light leading-relaxed">
-                <p>
-                Markhor Club membership is an invitation to stay close to dining, wellness, outdoor sport, aquatic activity and the wider Khanpur Dam destination.
+            {/* Right Private Privileges Narrative */}
+            <div className="lg:col-span-6 border-t border-[#C7A15A]/20 lg:border-t-0 lg:border-l lg:pl-10 pt-6 lg:pt-0 space-y-5 text-sm text-[#9A9389] font-light leading-relaxed">
+              <p>
+                As a founding pre-launch member, you secure priority access to all club amenities, dining rooms, sports facilities, and lakeside recreation options ahead of full operational launch.
               </p>
-              <div className="flex flex-wrap gap-3 pt-2 text-xs font-mono text-[#F4F0E8]">
-                <span className="px-3 py-1 rounded bg-white/5 border border-white/10 text-[#D6B978]">CLUB DESTINATION</span>
-                <span className="px-3 py-1 rounded bg-white/5 border border-white/10 text-[#D6B978]">500 KANAL ESTATE</span>
-                <span className="px-3 py-1 rounded bg-white/5 border border-white/10 text-[#D6B978]">KHANPUR LAKEFRONT</span>
+              <div className="grid grid-cols-2 gap-3 pt-2 text-[11px] font-mono text-[#F4F0E8]">
+                <div className="flex items-center gap-2 border-l border-[#D6B978]/40 pl-3">
+                  <span className="text-[#D6B978]">&bull;</span> 500 KANAL ESTATE
+                </div>
+                <div className="flex items-center gap-2 border-l border-[#D6B978]/40 pl-3">
+                  <span className="text-[#D6B978]">&bull;</span> LAKEFRONT ACCESS
+                </div>
+                <div className="flex items-center gap-2 border-l border-[#D6B978]/40 pl-3">
+                  <span className="text-[#D6B978]">&bull;</span> MARINA PRIVILEGES
+                </div>
+                <div className="flex items-center gap-2 border-l border-[#D6B978]/40 pl-3">
+                  <span className="text-[#D6B978]">&bull;</span> EQUESTRIAN TRAILS
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* THREE-TIER CONVERSION CTA HIERARCHY BAR */}
+          <div className="mt-10 border-t border-[#C7A15A]/20 pt-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* Primary CTA */}
+            <button
+              type="button"
+              onClick={scrollToForm}
+              className="w-full sm:w-auto bg-[#D6B978] px-8 py-4 text-[11px] font-mono uppercase tracking-[0.2em] font-bold text-[#071116] transition-all hover:bg-[#F4F0E8] focus:outline-none"
+            >
+              Apply for Membership
+            </button>
+
+            {/* Secondary & Tertiary CTAs */}
+            <div className="flex flex-wrap items-center justify-center gap-6 text-[11px] font-mono text-[#D6B978]">
+              <a
+                href="#contact"
+                className="flex items-center gap-2 uppercase tracking-widest text-[#F4F0E8] hover:text-[#D6B978] transition-colors"
+              >
+                <Calendar className="h-3.5 w-3.5 text-[#D6B978]" />
+                <span>Book a VIP Visit</span>
+              </a>
+
+              <span className="text-[#9A9389]/40">&bull;</span>
+
+              <a
+                href={`tel:${MEMBERSHIP_CONFIG.uanPhone}`}
+                className="flex items-center gap-2 uppercase tracking-widest text-[#D6B978] hover:text-[#F4F0E8] transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5 text-[#D6B978]" />
+                <span>Speak to Concierge: UAN {MEMBERSHIP_CONFIG.uanPhone}</span>
+              </a>
             </div>
           </div>
         </div>
 
-        {/* 6 LIFESTYLE PILLARS GRID */}
+        {/* 6 LIFESTYLE PILLARS NARRATIVE SPREAD */}
         <div className="mb-20">
-          <div className="pb-4 border-b border-white/10 mb-8 flex items-center justify-between">
-            <span className="text-xs uppercase tracking-[0.2em] font-mono text-[#D6B978]">WHAT MEMBERSHIP REPRESENTS</span>
-            <span className="text-xs font-mono text-[#9A9389]">6 LIFESTYLE PILLARS</span>
+          <div className="pb-4 border-b border-[#C7A15A]/20 mb-8 flex items-center justify-between font-mono text-[10px] text-[#9A9389]">
+            <span className="uppercase tracking-[0.2em] text-[#D6B978]">MEMBERSHIP PRIVILEGES</span>
+            <span>06 EXPERIENCE PILLARS</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {MEMBERSHIP_PILLARS.map((pillar) => (
               <div
                 key={pillar.number}
-                className="p-6 rounded-xl border border-white/10 bg-[#071116]/80 backdrop-blur-md space-y-2 group hover:border-[#D6B978]/40 transition-all duration-300"
+                className="p-6 border border-[#C7A15A]/15 bg-[#0B1C26]/60 space-y-3 rounded-sm group hover:border-[#D6B978]/40 transition-colors duration-500"
               >
                 <div className="flex items-center justify-between font-mono text-xs text-[#D6B978]">
                   <span>{pillar.number}</span>
-                  <span className="text-[10px] uppercase text-[#9A9389]">{pillar.subtitle}</span>
+                  <span className="text-[9px] uppercase tracking-widest text-[#9A9389]">PRIVILEGE</span>
                 </div>
                 <h4 className="font-serif text-2xl text-[#F4F0E8] font-light group-hover:text-[#D6B978] transition-colors">
                   {pillar.title}
@@ -238,92 +282,91 @@ export default function Membership() {
           </div>
         </div>
 
-        {/* MAIN MEMBERSHIP APPLICATION / ENQUIRY FORM WORKBENCH */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
-          {/* LEFT ATMOSPHERIC MEDIA & STICKY FEE PANEL (5 cols) */}
-          <div className="lg:col-span-5 rounded-2xl border border-white/10 overflow-hidden relative min-h-[460px] flex flex-col justify-between p-8 bg-[#0B1C26]/90 shadow-2xl">
+        {/* MEMBERSHIP APPLICATION WORKBENCH */}
+        <div id="membership-application-form" className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
+          
+          {/* LEFT ATMOSPHERIC MEDIA (5 COLS) */}
+          <div className="lg:col-span-5 border border-[#C7A15A]/20 overflow-hidden relative min-h-[440px] flex flex-col justify-between p-8 bg-[#0B1C26] rounded-sm">
             <Image
               src="/assets/images/Markhor Lobby.png"
               alt="Markhor Members Lounge Atmosphere"
               fill
-              sizes="(max-width: 1024px) 100vw, 42vw"
-              className="object-cover opacity-30"
+              sizes="(max-width: 1024px) 100vw, 40vw"
+              className="object-cover opacity-25"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#071116] via-[#071116]/70 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#071116] via-[#071116]/60 to-transparent" />
 
             <div className="relative z-10 space-y-4">
-              <span className="px-3 py-1 rounded bg-[#D6B978]/20 border border-[#D6B978]/40 text-xs font-mono text-[#D6B978] uppercase tracking-wider">
-                PRE-LAUNCH MEMBERSHIP
+              <span className="inline-block border border-[#D6B978]/40 bg-[#D6B978]/10 px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-[#D6B978]">
+                APPLICATION DESK
               </span>
-              <h3 className="font-serif text-3xl sm:text-4xl text-[#F4F0E8] font-light">
-                MAKE ROOM FOR THE MARKHOR LIFE.
+              <h3 className="font-serif text-3xl font-light text-[#F4F0E8]">
+                BEGIN YOUR INQUIRY.
               </h3>
-              <p className="text-sm text-[#9A9389] font-light leading-relaxed">
-                Connect with the Markhor Club team for current membership information and site visit options.
+              <p className="text-xs text-[#9A9389] font-light leading-relaxed">
+                Complete the confidential application form. The Markhor Club advisory desk will contact you regarding membership terms and private visit arrangements.
               </p>
             </div>
 
-            {/* Desktop Sticky Fee Summary Card */}
-            <div className="relative z-10 p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-md space-y-2 mt-8">
-              <div className="flex items-center justify-between text-xs font-mono text-[#9A9389]">
+            {/* Fee Summary Anchor */}
+            <div className="relative z-10 p-5 border border-[#C7A15A]/25 bg-[#071116]/90 backdrop-blur-md space-y-2 mt-8">
+              <div className="flex items-center justify-between text-[10px] font-mono text-[#9A9389]">
                 <span>PRE-LAUNCH FEE</span>
-                <span className="text-[#D6B978]">CURRENT PHASE</span>
+                <span className="text-[#D6B978]">SUBJECT TO REVISION</span>
               </div>
-              <div className="font-serif text-3xl text-[#F4F0E8] font-light">
+              <div className="font-serif text-3xl text-[#D6B978] font-light">
                 {MEMBERSHIP_CONFIG.feeFormatted}
               </div>
-              <p className="text-[11px] font-mono text-[#9A9389]/80">
-                {MEMBERSHIP_CONFIG.qualifier}
-              </p>
             </div>
           </div>
 
-          {/* RIGHT APPLICATION FORM (7 cols) */}
-          <div className="lg:col-span-7 rounded-2xl border border-white/15 bg-[#071116]/90 p-8 sm:p-12 shadow-2xl backdrop-blur-md relative">
+          {/* RIGHT APPLICATION FORM WORKBENCH (7 COLS) */}
+          <div className="lg:col-span-7 border border-[#C7A15A]/25 bg-[#0B1C26]/90 p-8 sm:p-12 backdrop-blur-md relative rounded-sm">
             <div className="mb-8">
-              <span className="text-xs uppercase tracking-[0.25em] font-mono text-[#D6B978]">
-                MEMBERSHIP ENQUIRY
+              <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#D6B978]">
+                CONFIDENTIAL APPLICATION
               </span>
-              <h3 className="mt-2 font-serif text-3xl sm:text-4xl text-[#F4F0E8] font-light">
-                START YOUR MEMBERSHIP JOURNEY.
+              <h3 className="mt-2 font-serif text-3xl text-[#F4F0E8] font-light">
+                MEMBERSHIP INQUIRY FORM
               </h3>
-              <p className="mt-2 text-sm text-[#9A9389] font-light">
-                Share your details and the Markhor Club team can contact you with current membership information and next steps.
+              <p className="mt-2 text-xs text-[#9A9389] font-light">
+                Please provide your details below. Our team treats all inquiries with absolute privacy.
               </p>
             </div>
 
             <AnimatePresence mode="wait">
               {submitStatus === 'success' ? (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="p-8 rounded-xl border border-emerald-500/30 bg-emerald-950/40 text-center space-y-4"
+                  transition={{ duration: 0.6 }}
+                  className="p-8 border border-emerald-500/30 bg-emerald-950/20 text-center space-y-4"
                 >
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-8 h-8" />
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-7 h-7" />
                   </div>
-                  <span className="text-xs font-mono uppercase tracking-widest text-emerald-400 block">
-                    ENQUIRY RECEIVED
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 block">
+                    INQUIRY RECORDED
                   </span>
                   <h4 className="font-serif text-2xl text-[#F4F0E8] font-light">
                     THANK YOU FOR YOUR INTEREST IN MARKHOR CLUB.
                   </h4>
-                  <p className="text-sm text-[#9A9389] font-light leading-relaxed max-w-lg mx-auto">
-                    Your membership enquiry has been successfully recorded. The Markhor Club team can follow up using the contact details you provided.
+                  <p className="text-xs text-[#9A9389] font-light leading-relaxed max-w-lg mx-auto">
+                    Your membership inquiry has been received. Our advisory team will reach out via your preferred contact method.
                   </p>
                   <div className="pt-4 flex justify-center">
                     <button
                       onClick={() => setSubmitStatus('idle')}
-                      className="px-6 py-2.5 rounded border border-emerald-500/40 text-xs font-mono uppercase tracking-wider text-emerald-300 hover:bg-emerald-500/10 transition-colors flex items-center gap-2"
+                      className="px-6 py-2.5 border border-emerald-500/40 text-[10px] font-mono uppercase tracking-wider text-emerald-300 hover:bg-emerald-500/10 transition-colors flex items-center gap-2"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" /> SUBMIT ANOTHER ENQUIRY
+                      <RefreshCw className="w-3.5 h-3.5" /> SUBMIT ANOTHER INQUIRY
                     </button>
                   </div>
                 </motion.div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-                  {/* Honeypot Spam Protection Field */}
+                  {/* Honeypot Spam Protection */}
                   <input
                     type="text"
                     name="honeypot"
@@ -334,16 +377,13 @@ export default function Membership() {
                     aria-hidden="true"
                   />
 
-                  {/* Error Notification Banner */}
+                  {/* Error Notification */}
                   {submitStatus === 'error' && (
-                    <div className="p-4 rounded-lg border border-red-500/40 bg-red-950/40 text-xs text-red-200 flex items-start gap-3">
+                    <div className="p-4 border border-red-500/40 bg-red-950/30 text-xs text-red-200 flex items-start gap-3">
                       <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-semibold mb-1">Submission Could Not Complete</p>
+                        <p className="font-semibold mb-1">Submission Error</p>
                         <p className="font-light leading-relaxed">{errorMessage}</p>
-                        <div className="mt-2 pt-2 border-t border-red-500/20 text-[11px] font-mono text-red-300">
-                          Direct Contact Options: UAN {MEMBERSHIP_CONFIG.uanPhone} &bull; {MEMBERSHIP_CONFIG.contactEmail}
-                        </div>
                       </div>
                     </div>
                   )}
@@ -351,7 +391,7 @@ export default function Membership() {
                   {/* Full Name & Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="fullName" className="block text-xs font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
+                      <label htmlFor="fullName" className="block text-[10px] font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
                         FULL NAME <span className="text-[#D6B978]">*</span>
                       </label>
                       <input
@@ -363,15 +403,15 @@ export default function Membership() {
                         placeholder="e.g. Tariq Khan"
                         aria-required="true"
                         aria-invalid={!!errors.fullName}
-                        className={`w-full px-4 py-3 rounded.lg bg-[#0B1C26] border text-sm text-[#F4F0E8] placeholder-[#9A9389]/50 focus:outline-none focus:ring-2 focus:ring-[#D6B978] transition-all ${
-                          errors.fullName ? 'border-red-500/80' : 'border-white/10 hover:border-white/20'
+                        className={`w-full px-4 py-3 bg-[#071116] border text-xs text-[#F4F0E8] placeholder-[#9A9389]/40 focus:outline-none focus:border-[#D6B978] transition-colors ${
+                          errors.fullName ? 'border-red-500/80' : 'border-[#C7A15A]/20'
                         }`}
                       />
-                      {errors.fullName && <p className="mt-1 text-xs text-red-400 font-mono">{errors.fullName}</p>}
+                      {errors.fullName && <p className="mt-1 text-[10px] text-red-400 font-mono">{errors.fullName}</p>}
                     </div>
 
                     <div>
-                      <label htmlFor="phone" className="block text-xs font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
+                      <label htmlFor="phone" className="block text-[10px] font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
                         MOBILE NUMBER <span className="text-[#D6B978]">*</span>
                       </label>
                       <input
@@ -383,18 +423,18 @@ export default function Membership() {
                         placeholder="+92 300 1234567"
                         aria-required="true"
                         aria-invalid={!!errors.phone}
-                        className={`w-full px-4 py-3 rounded-lg bg-[#0B1C26] border text-sm text-[#F4F0E8] placeholder-[#9A9389]/50 focus:outline-none focus:ring-2 focus:ring-[#D6B978] transition-all ${
-                          errors.phone ? 'border-red-500/80' : 'border-white/10 hover:border-white/20'
+                        className={`w-full px-4 py-3 bg-[#071116] border text-xs text-[#F4F0E8] placeholder-[#9A9389]/40 focus:outline-none focus:border-[#D6B978] transition-colors ${
+                          errors.phone ? 'border-red-500/80' : 'border-[#C7A15A]/20'
                         }`}
                       />
-                      {errors.phone && <p className="mt-1 text-xs text-red-400 font-mono">{errors.phone}</p>}
+                      {errors.phone && <p className="mt-1 text-[10px] text-red-400 font-mono">{errors.phone}</p>}
                     </div>
                   </div>
 
-                  {/* Email & Preferred Contact Method */}
+                  {/* Email & Preferred Contact */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label htmlFor="email" className="block text-xs font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
+                      <label htmlFor="email" className="block text-[10px] font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
                         EMAIL ADDRESS <span className="text-[#D6B978]">*</span>
                       </label>
                       <input
@@ -406,15 +446,15 @@ export default function Membership() {
                         placeholder="tariq@example.com"
                         aria-required="true"
                         aria-invalid={!!errors.email}
-                        className={`w-full px-4 py-3 rounded-lg bg-[#0B1C26] border text-sm text-[#F4F0E8] placeholder-[#9A9389]/50 focus:outline-none focus:ring-2 focus:ring-[#D6B978] transition-all ${
-                          errors.email ? 'border-red-500/80' : 'border-white/10 hover:border-white/20'
+                        className={`w-full px-4 py-3 bg-[#071116] border text-xs text-[#F4F0E8] placeholder-[#9A9389]/40 focus:outline-none focus:border-[#D6B978] transition-colors ${
+                          errors.email ? 'border-red-500/80' : 'border-[#C7A15A]/20'
                         }`}
                       />
-                      {errors.email && <p className="mt-1 text-xs text-red-400 font-mono">{errors.email}</p>}
+                      {errors.email && <p className="mt-1 text-[10px] text-red-400 font-mono">{errors.email}</p>}
                     </div>
 
                     <div>
-                      <label htmlFor="preferredContact" className="block text-xs font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
+                      <label htmlFor="preferredContact" className="block text-[10px] font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
                         PREFERRED CONTACT METHOD
                       </label>
                       <select
@@ -422,7 +462,7 @@ export default function Membership() {
                         name="preferredContact"
                         value={formData.preferredContact}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg bg-[#0B1C26] border border-white/10 text-sm text-[#F4F0E8] focus:outline-none focus:ring-2 focus:ring-[#D6B978] transition-all"
+                        className="w-full px-4 py-3 bg-[#071116] border border-[#C7A15A]/20 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#D6B978] transition-colors"
                       >
                         <option value="Phone">Phone Call</option>
                         <option value="Email">Email</option>
@@ -433,27 +473,27 @@ export default function Membership() {
 
                   {/* Interest Category */}
                   <div>
-                    <label htmlFor="interestCategory" className="block text-xs font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
-                      MEMBERSHIP ENQUIRY CATEGORY
+                    <label htmlFor="interestCategory" className="block text-[10px] font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
+                      MEMBERSHIP CATEGORY
                     </label>
                     <select
                       id="interestCategory"
                       name="interestCategory"
                       value={formData.interestCategory}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg bg-[#0B1C26] border border-white/10 text-sm text-[#F4F0E8] focus:outline-none focus:ring-2 focus:ring-[#D6B978] transition-all"
+                      className="w-full px-4 py-3 bg-[#071116] border border-[#C7A15A]/20 text-xs text-[#F4F0E8] focus:outline-none focus:border-[#D6B978] transition-colors"
                     >
                       <option value="Individual Membership Enquiry">Individual Membership</option>
                       <option value="Family Membership Enquiry">Family Membership</option>
                       <option value="Corporate / Group Enquiry">Corporate / Group Enquiry</option>
-                      <option value="General Information Enquiry">General Membership Information</option>
+                      <option value="General Information Enquiry">General Membership Inquiry</option>
                     </select>
                   </div>
 
                   {/* Optional Message */}
                   <div>
-                    <label htmlFor="message" className="block text-xs font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
-                      MESSAGE / SPECIAL REQUESTS <span className="text-[#9A9389] lowercase font-sans">(optional)</span>
+                    <label htmlFor="message" className="block text-[10px] font-mono uppercase tracking-wider text-[#F4F0E8] mb-2">
+                      NOTES / SPECIFIC INQUIRIES <span className="text-[#9A9389] lowercase font-sans">(optional)</span>
                     </label>
                     <textarea
                       id="message"
@@ -462,7 +502,7 @@ export default function Membership() {
                       value={formData.message}
                       onChange={handleChange}
                       placeholder="Specify any questions, preferred time for call, or site visit interest..."
-                      className="w-full px-4 py-3 rounded-lg bg-[#0B1C26] border border-white/10 text-sm text-[#F4F0E8] placeholder-[#9A9389]/50 focus:outline-none focus:ring-2 focus:ring-[#D6B978] transition-all resize-none"
+                      className="w-full px-4 py-3 bg-[#071116] border border-[#C7A15A]/20 text-xs text-[#F4F0E8] placeholder-[#9A9389]/40 focus:outline-none focus:border-[#D6B978] transition-colors resize-none"
                     />
                   </div>
 
@@ -474,31 +514,30 @@ export default function Membership() {
                         name="consent"
                         checked={formData.consent}
                         onChange={handleChange}
-                        className="mt-1 h-4 w-4 rounded border-white/20 bg-[#0B1C26] text-[#D6B978] focus:ring-[#D6B978]"
+                        className="mt-1 h-4 w-4 border-[#C7A15A]/40 bg-[#071116] text-[#D6B978] focus:ring-[#D6B978]"
                       />
                       <span className="text-xs text-[#9A9389] font-light leading-relaxed group-hover:text-[#F4F0E8] transition-colors">
-                        I agree that Markhor Club may contact me regarding my membership enquiry.
+                        I agree that Markhor Club may contact me regarding my confidential membership inquiry.
                       </span>
                     </label>
-                    {errors.consent && <p className="mt-1 text-xs text-red-400 font-mono">{errors.consent}</p>}
+                    {errors.consent && <p className="mt-1 text-[10px] text-red-400 font-mono">{errors.consent}</p>}
                   </div>
 
                   {/* Submit Button */}
                   <div className="pt-2">
-                    <LuxuryButton
-                      variant="primary"
+                    <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full sm:w-auto"
+                      className="w-full bg-[#D6B978] px-8 py-4 text-[11px] font-mono uppercase tracking-[0.2em] font-bold text-[#071116] transition-all hover:bg-[#F4F0E8] focus:outline-none disabled:opacity-50"
                     >
                       {isSubmitting ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-[#071116]" /> SUBMITTING ENQUIRY...
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-[#071116]" /> SUBMITTING APPLICATION...
                         </span>
                       ) : (
-                        'REQUEST MEMBERSHIP DETAILS'
+                        'SUBMIT MEMBERSHIP APPLICATION'
                       )}
-                    </LuxuryButton>
+                    </button>
                   </div>
                 </form>
               )}
@@ -509,3 +548,4 @@ export default function Membership() {
     </SectionWrapper>
   )
 }
+

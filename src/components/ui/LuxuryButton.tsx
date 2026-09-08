@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 
 interface LuxuryButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline'
   href?: string
   icon?: boolean
   children: React.ReactNode
@@ -19,22 +19,24 @@ export default function LuxuryButton({
   ...props
 }: LuxuryButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center gap-3 px-7 py-3.5 rounded-sm font-sans font-semibold text-xs tracking-[0.15em] uppercase transition-all duration-300 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C7A15A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#071116]'
+    'inline-flex items-center justify-center gap-3 px-8 py-3.5 rounded-none sm:rounded-sm font-sans font-semibold text-xs tracking-[0.18em] uppercase transition-all duration-300 min-h-[48px] select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6B978] focus-visible:ring-offset-2 focus-visible:ring-offset-[#071116]'
 
   const variantStyles = {
     primary:
-      'bg-gradient-to-r from-[#C7A15A] to-[#D6B978] text-[#071116] shadow-lg shadow-[#C7A15A]/20 hover:shadow-xl hover:shadow-[#C7A15A]/35 hover:-translate-y-0.5 active:translate-y-0',
+      'bg-[#F4F0E8] text-[#071116] border border-[#F4F0E8] shadow-lg shadow-black/40 hover:bg-[#D6B978] hover:border-[#D6B978] hover:text-[#071116] hover:shadow-xl hover:shadow-[#D6B978]/20 hover:-translate-y-0.5 active:translate-y-0',
     secondary:
-      'border border-[#C7A15A]/70 text-[#F4F0E8] bg-transparent hover:bg-[#C7A15A]/10 hover:border-[#C7A15A] hover:text-[#D6B978] active:bg-[#C7A15A]/20',
+      'border border-[#D6B978]/50 text-[#F4F0E8] bg-transparent hover:bg-[#D6B978]/10 hover:border-[#D6B978] hover:text-[#D6B978] active:bg-[#D6B978]/20',
+    outline:
+      'border border-[#C7A15A]/60 text-[#D6B978] bg-transparent hover:bg-[#C7A15A]/15 hover:border-[#C7A15A] hover:text-[#F4F0E8]',
     ghost:
-      'px-0 py-2 text-[#C7A15A] hover:text-[#D6B978] bg-transparent font-medium normal-case tracking-wider hover:translate-x-1',
+      'px-0 py-2 min-h-0 bg-transparent text-[#D6B978] hover:text-[#F4F0E8] tracking-[0.2em] font-medium hover:translate-x-1 border-0 shadow-none',
   }
 
   const content = (
     <>
       <span>{children}</span>
       {icon && (
-        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 shrink-0" />
       )}
     </>
   )

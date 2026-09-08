@@ -14,9 +14,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import gsap from 'gsap'
 
 const INTRO_VIDEO_PRIMARY = '/assets/video/markhor-intro.mp4'
-const INTRO_VIDEO_ALT = '/assets/video/markhor-intro.mp4'
-const INTRO_POSTER_PRIMARY = '/assets/video/markhor-intro-poster.jpg'
-const INTRO_POSTER_ALT = '/assets/video/markhor-intro-poster.jpg'
+const INTRO_POSTER_PRIMARY = '/assets/images/Dam View.png'
 
 export type IntroStatus = 'loading' | 'playing' | 'exiting' | 'complete'
 
@@ -76,7 +74,6 @@ export default function CinematicIntroProvider({
 
   const overlayRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const veilRef = useRef<HTMLDivElement>(null)
   const brandRef = useRef<HTMLDivElement>(null)
 
   const statusRef = useRef<IntroStatus>('loading')
@@ -88,12 +85,10 @@ export default function CinematicIntroProvider({
   const fallbackTimerRef = useRef<number | null>(null)
   const gsapTweenRef = useRef<gsap.core.Tween | null>(null)
 
-  // Keep statusRef in sync
   useEffect(() => {
     statusRef.current = status
   }, [status])
 
-  // Restore scroll helper
   const unlockScroll = useCallback(() => {
     if (typeof document === 'undefined') return
     document.documentElement.classList.remove('markhor-intro-active')
@@ -127,7 +122,6 @@ export default function CinematicIntroProvider({
     }
   }, [])
 
-  // Lock scroll helper
   const lockScroll = useCallback(() => {
     if (typeof document === 'undefined') return
     if (originalBodyOverflowRef.current === null) {
@@ -150,35 +144,30 @@ export default function CinematicIntroProvider({
     document.documentElement.style.overscrollBehavior = 'none'
   }, [])
 
-  // Deterministic exit transition
   const completeIntro = useCallback(
     (immediate = false) => {
       if (statusRef.current === 'complete' || isExitingRef.current) return
       isExitingRef.current = true
 
-      // Clear fail-safe timer
       if (fallbackTimerRef.current !== null) {
         window.clearTimeout(fallbackTimerRef.current)
         fallbackTimerRef.current = null
       }
 
-      // Mark seen in sessionStorage (client-side only)
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem('markhor_intro_seen', 'true')
         } catch {
-          // Ignore quota / privacy mode errors
+          // Ignore storage quota errors
         }
       }
 
-      // Immediately restore body scrolling & announce intro complete to page
       unlockScroll()
       setIntroComplete(true)
 
       const video = videoRef.current
       const overlay = overlayRef.current
 
-      // Stop video audio immediately so ambient music can transition cleanly
       if (video) {
         video.muted = true
       }
@@ -193,15 +182,16 @@ export default function CinematicIntroProvider({
         return
       }
 
-      // Smooth exit transition: set pointer-events none & fade opacity 1 -> 0 over 800ms
+      // Smooth luxury cross-dissolve (1.0s duration)
       overlay.style.pointerEvents = 'none'
       statusRef.current = 'exiting'
       setStatus('exiting')
 
       gsapTweenRef.current = gsap.to(overlay, {
         opacity: 0,
-        duration: 0.8,
-        ease: 'power2.out',
+        scale: 1.04,
+        duration: 1.1,
+        ease: 'power2.inOut',
         onComplete: () => {
           video?.pause()
           statusRef.current = 'complete'
@@ -213,9 +203,7 @@ export default function CinematicIntroProvider({
     [unlockScroll]
   )
 
-  // Primary lifecycle initialization
   useEffect(() => {
-    // Non-home routes, reduced motion, or previously seen session -> skip immediately unless forced
     let hasSeenSession = false
     if (typeof window !== 'undefined') {
       try {
@@ -233,15 +221,13 @@ export default function CinematicIntroProvider({
       return
     }
 
-    // Home page fresh session: lock scroll and start playing
     statusRef.current = 'playing'
     setStatus('playing')
     lockScroll()
 
-    // Safety fallback: 25 seconds max (video is ~15-20s max, allows for network buffer)
     const safetyTimer = window.setTimeout(() => {
       completeIntro(false)
-    }, 25000)
+    }, 22000)
     fallbackTimerRef.current = safetyTimer
 
     return () => {
@@ -255,7 +241,6 @@ export default function CinematicIntroProvider({
     }
   }, [isHome, forceReplay, lockScroll, unlockScroll, completeIntro])
 
-  // Play video with auto-start guarantee (muted first)
   useEffect(() => {
     if (status !== 'playing') return
 
@@ -265,14 +250,10 @@ export default function CinematicIntroProvider({
     video.muted = isMuted
     const playPromise = video.play()
     if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        console.warn('[Markhor Intro] Autoplay rejected, enforcing muted autoplay:', err)
+      playPromise.catch(() => {
         video.muted = true
         setIsMuted(true)
-        video.play().catch((mutedErr) => {
-          console.error('[Markhor Intro] All video play attempts failed:', mutedErr)
-          completeIntro(false)
-        })
+        video.play().catch(() => completeIntro(false))
       })
     }
   }, [status, isMuted, completeIntro])
@@ -287,7 +268,6 @@ export default function CinematicIntroProvider({
   }
 
   const handleOverlayClick = () => {
-    // Visitor click gesture: unmute video if currently muted
     const video = videoRef.current
     if (video && video.muted) {
       video.muted = false
@@ -298,11 +278,10 @@ export default function CinematicIntroProvider({
   const handleLoadedMetadata = () => {
     const video = videoRef.current
     if (video && video.duration) {
-      // Dynamic safety timer based on actual video duration + 3 seconds buffer
       if (fallbackTimerRef.current !== null) {
         window.clearTimeout(fallbackTimerRef.current)
       }
-      const durationMs = Math.ceil((video.duration + 3) * 1000)
+      const durationMs = Math.ceil((video.duration + 2) * 1000)
       fallbackTimerRef.current = window.setTimeout(() => {
         completeIntro(false)
       }, durationMs)
@@ -348,7 +327,7 @@ export default function CinematicIntroProvider({
         <div
           ref={overlayRef}
           onClick={handleOverlayClick}
-          className={`markhor-intro fixed inset-0 z-[2000] overflow-hidden bg-[#071116] text-[#F4F0E8] select-none cursor-pointer ${
+          className={`markhor-intro fixed inset-0 z-[2000] overflow-hidden bg-[#04090C] text-[#F4F0E8] select-none cursor-pointer ${
             status === 'exiting' ? 'pointer-events-none' : ''
           }`}
           style={{ position: 'fixed', inset: 0, zIndex: 2000, overflow: 'hidden' }}
@@ -358,8 +337,7 @@ export default function CinematicIntroProvider({
         >
           <video
             ref={videoRef}
-            className="markhor-intro-video absolute inset-0 h-full w-full object-cover"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', maxWidth: 'none', objectFit: 'cover' }}
+            className="markhor-intro-video absolute inset-0 h-full w-full object-cover object-center scale-[1.02]"
             poster={INTRO_POSTER_PRIMARY}
             autoPlay
             muted={isMuted}
@@ -374,61 +352,63 @@ export default function CinematicIntroProvider({
               }
             }}
             onEnded={() => completeIntro(false)}
-            onError={() => {
-              console.warn('[Markhor Intro] Primary video failed, trying alternate source or completing gracefully.')
-              completeIntro(false)
-            }}
+            onError={() => completeIntro(false)}
           >
             <source src={INTRO_VIDEO_PRIMARY} type="video/mp4" />
-            <source src={INTRO_VIDEO_ALT} type="video/mp4" />
           </video>
 
-          <div className="markhor-intro-gradient absolute inset-0 bg-gradient-to-t from-[#071116]/80 via-transparent to-[#071116]/35" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
-          <div ref={veilRef} className="markhor-intro-veil absolute inset-0 bg-[#071116] opacity-0" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+          {/* Deep Cinematic Black Levels & Directional Vignette */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#04090C] via-[#071116]/40 to-[#04090C]/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,#04090C_100%)] pointer-events-none" />
 
+          {/* Bottom Left Luxury Brand Watermark */}
           <div
             ref={brandRef}
-            className="markhor-intro-brand absolute bottom-24 left-6 flex translate-y-2 flex-col gap-2 opacity-80 sm:left-10 lg:left-16"
-            style={{ position: 'absolute', left: '1.5rem', bottom: '6rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
+            className="absolute bottom-20 left-6 sm:bottom-24 sm:left-12 lg:left-16 flex flex-col gap-2 z-10"
           >
-            <Image
-              src="/assets/logos/markhor-logo-gold.png"
-              alt=""
-              width={112}
-              height={112}
-              priority
-              className="h-20 w-20 object-contain object-left drop-shadow-[0_0_20px_rgba(199,161,90,0.35)] sm:h-24 sm:w-24"
-              aria-hidden="true"
-            />
-            <span className="text-[10px] uppercase tracking-[0.32em] text-[#F4F0E8]/85 font-sans">
-              MARKHOR CLUB
-            </span>
-            <span className="text-[9px] uppercase tracking-[0.28em] text-[#D6B978] font-sans">
-              KHANPUR DAM • KPK
-            </span>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/assets/logos/markhor-logo-gold.png"
+                alt="Markhor Club Logo"
+                width={120}
+                height={120}
+                priority
+                className="h-16 w-auto object-contain drop-shadow-[0_0_25px_rgba(199,161,90,0.4)] sm:h-20"
+                aria-hidden="true"
+              />
+              <div className="h-10 w-[1px] bg-[#C7A15A]/40" />
+              <div>
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.32em] text-[#F4F0E8]">
+                  MARKHOR CLUB
+                </span>
+                <span className="block text-[9px] uppercase tracking-[0.26em] text-[#D6B978] font-sans">
+                  KHANPUR DAM &bull; KPK &bull; PAKISTAN
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Center Sound Prompt Banner when muted */}
+          {/* Center Sound Prompt Pill when muted */}
           {isMuted && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <div className="flex items-center gap-3 px-6 py-3.5 rounded-full bg-[#071116]/85 border border-[#D6B978]/60 shadow-[0_0_30px_rgba(214,185,120,0.25)] backdrop-blur-md animate-pulse">
+              <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-[#04090C]/85 border border-[#D6B978]/60 shadow-[0_0_35px_rgba(214,185,120,0.25)] backdrop-blur-md animate-pulse">
                 <Volume2 className="w-4 h-4 text-[#D6B978]" />
-                <span className="text-xs font-medium uppercase tracking-[0.22em] text-[#F4F0E8]">
-                  Tap anywhere to enable sound & voice
+                <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#F4F0E8]">
+                  TAP ANYWHERE FOR FULL AUDIO EXPERIENCE
                 </span>
               </div>
             </div>
           )}
 
-          {/* Action Buttons Top Right: Sound & Skip */}
-          <div className="absolute right-5 top-5 flex items-center gap-3 sm:right-10 sm:top-8 z-10">
+          {/* Top Right Controls: Sound & Skip */}
+          <div className="absolute right-6 top-6 sm:right-12 sm:top-10 flex items-center gap-4 z-20">
             <button
               type="button"
               onClick={toggleSound}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#071116]/80 border border-[#D6B978]/50 text-[10px] font-medium uppercase tracking-widest text-[#F4F0E8] hover:border-[#D6B978] transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#04090C]/80 border border-[#D6B978]/40 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#F4F0E8] hover:border-[#D6B978] hover:text-[#D6B978] transition-all backdrop-blur-md"
             >
               {isMuted ? <VolumeX className="w-3.5 h-3.5 text-amber-400" /> : <Volume2 className="w-3.5 h-3.5 text-[#D6B978] animate-pulse" />}
-              <span>{isMuted ? 'Tap for Sound' : 'Sound On'}</span>
+              <span>{isMuted ? 'Muted' : 'Sound On'}</span>
             </button>
 
             <button
@@ -439,23 +419,24 @@ export default function CinematicIntroProvider({
                 event.stopPropagation()
                 completeIntro(false)
               }}
-              className="markhor-intro-skip inline-flex items-center gap-2 border-b border-[#D6B978]/65 px-1 pb-1.5 text-[10px] font-medium uppercase tracking-[0.26em] text-[#F4F0E8] transition-colors duration-300 hover:border-[#D6B978] hover:text-[#D6B978]"
-              aria-label="Skip Markhor Club cinematic introduction"
+              className="group inline-flex items-center gap-2 border-b border-[#D6B978]/60 pb-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-[#F4F0E8] transition-all duration-300 hover:border-[#D6B978] hover:text-[#D6B978]"
+              aria-label="Skip Markhor Club intro film"
             >
-              <span>Skip intro</span>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Skip Film</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
             </button>
           </div>
 
-          <div className="markhor-intro-progress absolute bottom-6 left-6 right-6 flex items-center gap-4 sm:left-10 sm:right-10 lg:left-16 lg:right-16" style={{ position: 'absolute', right: '1.5rem', bottom: '1.5rem', left: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div className="markhor-intro-progress-track h-px flex-1 overflow-hidden bg-[#F4F0E8]/20" aria-hidden="true">
+          {/* Bottom Progress Bar */}
+          <div className="absolute bottom-6 left-6 right-6 sm:left-12 sm:right-12 lg:left-16 lg:right-16 flex items-center gap-4 z-10">
+            <div className="h-[1px] flex-1 overflow-hidden bg-[#F4F0E8]/15" aria-hidden="true">
               <div
                 className="h-full origin-left bg-[#D6B978] transition-[width] duration-150 ease-linear"
                 style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
               />
             </div>
-            <span className="text-[9px] uppercase tracking-[0.24em] text-[#F4F0E8]/55 font-sans">
-              INTRODUCTION
+            <span className="text-[9px] uppercase tracking-[0.26em] text-[#9A9389] font-sans">
+              FILM CHAPTER 01
             </span>
           </div>
         </div>
@@ -463,4 +444,3 @@ export default function CinematicIntroProvider({
     </CinematicIntroContext.Provider>
   )
 }
-
