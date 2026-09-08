@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { crmClient } from '@/lib/crm/client'
+import { generateReference } from '@/lib/utils/reference-generator'
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const referenceNumber = `CNT-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    const referenceNumber = generateReference('CNT')
 
     // 1. Save locally
     const inquiry = await db.membershipInquiry.create({

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { MEMBERSHIP_CONFIG } from '@/config/membership'
 import {
   CreditCard,
   Upload,
@@ -22,7 +23,7 @@ export default function MembershipPaymentSubmissionPage() {
   const [email, setEmail] = useState('')
   const [membershipNumber, setMembershipNumber] = useState('')
   const [inquiryReference, setInquiryReference] = useState('')
-  const [amount, setAmount] = useState('500000')
+  const [amount, setAmount] = useState(MEMBERSHIP_CONFIG.feePkr.toString())
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer')
   const [providerName, setProviderName] = useState('Easypaisa')
   const [destinationAccountId, setDestinationAccountId] = useState('')

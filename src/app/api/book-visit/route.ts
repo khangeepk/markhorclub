@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { syncVisitBookingToCrm } from '@/lib/services/visit-sync'
 import { sendInquiryNotifications } from '@/lib/services/notifications'
+import { generateReference } from '@/lib/utils/reference-generator'
 
 // In-memory rate limiting map (5 requests per 10 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
 
     const sanitizedName = fullName.trim().substring(0, 100)
     const sanitizedEmail = email.trim().toLowerCase().substring(0, 100)
-    const referenceNumber = `VST-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    const referenceNumber = generateReference('VST')
 
     // 1. Save locally in Database
     let localVisit
@@ -73,11 +74,10 @@ export async function POST(request: Request) {
       })
     } catch (dbErr: any) {
       console.error('Failed to save visit booking locally:', dbErr)
-      return NextResponse.json({
-        success: true,
-        referenceNumber,
-        message: 'Your site visit request has been recorded. Our team will contact you to confirm.',
-      })
+      return NextResponse.json(
+        { success: false, error: 'Unable to save your site visit booking. Please try again or call us directly.' },
+        { status: 500 }
+      )
     }
 
     // 2. GuaranteedCRM Sync (Non-blocking: upsert contact, opp in '04 Visit Scheduled', appt in calendar)

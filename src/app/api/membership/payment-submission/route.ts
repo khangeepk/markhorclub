@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
+import { generateReference } from '@/lib/utils/reference-generator'
 
 export async function POST(request: Request) {
   try {
@@ -86,8 +87,7 @@ export async function POST(request: Request) {
     }
 
     // Generate submission reference SUB-2026-XXXX
-    const count = await db.paymentSubmission.count()
-    const submissionReference = `SUB-2026-${String(count + 1).padStart(4, '0')}`
+    const submissionReference = generateReference('SUB')
 
     // Insert record into DB
     const submission = await db.paymentSubmission.create({

@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { MEMBERSHIP_CONFIG } from '@/config/membership'
 import { syncInquiryToCrm } from '@/lib/services/crm-sync'
 import { sendInquiryNotifications } from '@/lib/services/notifications'
+import { generateReference } from '@/lib/utils/reference-generator'
 
 // In-memory rate limiting map for basic protection (5 requests per 10 mins per IP)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
     const sanitizedCategory = interestCategory ? String(interestCategory).substring(0, 80) : 'Individual Membership'
 
     // 3. Save locally FIRST in Database
-    const referenceNumber = `INQ-2026-${Math.floor(1000 + Math.random() * 9000)}`
+    const referenceNumber = generateReference('INQ')
 
     let localRecord
     try {
